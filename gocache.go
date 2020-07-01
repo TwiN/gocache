@@ -94,25 +94,15 @@ func (cache *Cache) removeExistingEntry(entry *Entry) {
 
 func (cache *Cache) evict() {
 	cache.mutex.Lock()
-	if len(cache.entries) == 0 {
+	if cache.tail == nil || len(cache.entries) == 0 {
+		cache.mutex.Unlock()
 		return
 	}
-	//var oldestKey string
-	//oldestKeyTimestamp := time.Now()
-	//for k, v := range cache.entries {
-	//	if len(oldestKey) == 0 || oldestKeyTimestamp.After(v.RelevantTimestamp) {
-	//		oldestKey = k
-	//		oldestKeyTimestamp = v.RelevantTimestamp
-	//	}
-	//}
-	//delete(cache.entries, oldestKey)
-
 	if cache.tail != nil {
 		delete(cache.entries, cache.tail.Key)
 		cache.tail = cache.tail.next
 		cache.tail.previous = nil
 	}
-
 	cache.mutex.Unlock()
 }
 
