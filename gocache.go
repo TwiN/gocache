@@ -66,8 +66,23 @@ func (cache *Cache) Set(key string, value interface{}) {
 }
 
 func (cache *Cache) moveExistingEntryToHead(entry *Entry) {
+	if !(entry == cache.head && entry == cache.tail) {
+		cache.removeExistingEntry(entry)
+	}
+	if entry != cache.head {
+		entry.previous = cache.head
+		entry.next = nil
+		cache.head.next = entry
+		cache.head = entry
+	}
+}
+
+func (cache *Cache) removeExistingEntry(entry *Entry) {
 	if cache.tail == entry {
 		cache.tail = cache.tail.next
+	}
+	if cache.head == entry {
+		cache.head = entry.previous
 	}
 	if entry.previous != nil {
 		entry.previous.next = entry.next
@@ -75,10 +90,6 @@ func (cache *Cache) moveExistingEntryToHead(entry *Entry) {
 	if entry.next != nil {
 		entry.next.previous = entry.previous
 	}
-	entry.next = nil
-	entry.previous = cache.head
-	cache.head.next = entry
-	cache.head = entry
 }
 
 func (cache *Cache) evict() {
@@ -107,7 +118,11 @@ func (cache *Cache) evict() {
 
 func (cache *Cache) Delete(key string) {
 	cache.mutex.Lock()
-	delete(cache.entries, key)
+	entry, ok := cache.entries[key]
+	if ok {
+		cache.removeExistingEntry(entry)
+		delete(cache.entries, key)
+	}
 	cache.mutex.Unlock()
 }
 
@@ -142,5 +157,7 @@ func (cache *Cache) Count() int {
 func (cache *Cache) Clear() {
 	cache.mutex.Lock()
 	cache.entries = make(map[string]*Entry)
+	cache.head = nil
+	cache.tail = nil
 	cache.mutex.Unlock()
 }

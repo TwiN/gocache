@@ -96,6 +96,7 @@ func TestCache_HeadTailWorksWithFIFO(t *testing.T) {
 
 	cache.Set("1", []byte("value"))
 
+	// (tail) 1 (head)
 	if cache.tail == nil || cache.tail.Key != "1" {
 		t.Error("cache tail should have been entry with key 1")
 	}
@@ -106,6 +107,7 @@ func TestCache_HeadTailWorksWithFIFO(t *testing.T) {
 	time.Sleep(time.Millisecond)
 	cache.Set("2", []byte("value"))
 
+	// (tail) 1 - 2 (head)
 	if cache.tail == nil || cache.tail.Key != "1" {
 		t.Error("cache tail should have been the entry with key 1")
 	}
@@ -128,6 +130,7 @@ func TestCache_HeadTailWorksWithFIFO(t *testing.T) {
 	time.Sleep(time.Millisecond)
 	cache.Set("3", []byte("value"))
 
+	// (tail) 1 - 2 - 3 (head)
 	if cache.tail == nil || cache.tail.Key != "1" {
 		t.Error("cache tail should have been the entry with key 1")
 	}
@@ -162,11 +165,11 @@ func TestCache_HeadTailWorksWithFIFO(t *testing.T) {
 
 	cache.Set("4", []byte("value"))
 
+	// (tail) 2 - 3 - 4 (head)
 	_, ok := cache.Get("1")
 	if ok {
 		t.Error("expected key 1 to have been removed, because FIFO")
 	}
-
 	if cache.tail == nil || cache.tail.Key != "2" {
 		t.Error("cache tail should have been the entry with key 2")
 	}
@@ -205,6 +208,7 @@ func TestCache_HeadTailWorksWithLRU(t *testing.T) {
 
 	cache.Set("1", []byte("value"))
 
+	// (tail) 1 (head)
 	if cache.tail == nil || cache.tail.Key != "1" {
 		t.Error("cache tail should have been entry with key 1")
 	}
@@ -215,6 +219,7 @@ func TestCache_HeadTailWorksWithLRU(t *testing.T) {
 	time.Sleep(time.Millisecond)
 	cache.Set("2", []byte("value"))
 
+	// (tail) 1 - 2 (head)
 	if cache.tail == nil || cache.tail.Key != "1" {
 		t.Error("cache tail should have been the entry with key 1")
 	}
@@ -237,8 +242,9 @@ func TestCache_HeadTailWorksWithLRU(t *testing.T) {
 	time.Sleep(time.Millisecond)
 	cache.Set("3", []byte("value"))
 
+	// (tail) 1 - 2 - 3 (head)
 	if cache.tail == nil || cache.tail.Key != "1" {
-		t.Error("cache tail should have been the entry with key 1, but was")
+		t.Error("cache tail should have been the entry with key 1")
 	}
 	if cache.tail.next.Key != "2" {
 		t.Error("The entry key after the cache tail should have been 2")
@@ -270,8 +276,10 @@ func TestCache_HeadTailWorksWithLRU(t *testing.T) {
 	// which means it will not be evicted during the next insertion.
 	_, _ = cache.Get("1")
 
+	// (tail) 2 - 3 - 1 (head) (This updated because LRU)
 	cache.Set("4", []byte("value"))
 
+	// (tail) 3 - 1 - 4 (head)
 	if cache.tail == nil || cache.tail.Key != "3" {
 		t.Error("cache tail should have been the entry with key 3")
 	}
@@ -303,5 +311,63 @@ func TestCache_HeadTailWorksWithLRU(t *testing.T) {
 	_, ok := cache.Get("1")
 	if !ok {
 		t.Error("expected key 1 to still exist, because LRU")
+	}
+}
+
+func TestCache_Delete(t *testing.T) {
+	cache := NewCache()
+
+	if cache.tail != nil {
+		t.Error("cache tail should have been nil")
+	}
+	if cache.head != nil {
+		t.Error("cache head should have been nil")
+	}
+
+	cache.Set("1", []byte("1"))
+	time.Sleep(time.Millisecond)
+	cache.Set("2", []byte("2"))
+	time.Sleep(time.Millisecond)
+	cache.Set("3", []byte("3"))
+
+	// (tail) 1 - 2 - 3 (head)
+	if cache.tail.Key != "1" {
+		t.Error("cache tail should have been the entry with key 1")
+	}
+	if cache.head.Key != "3" {
+		t.Error("cache head should have been the entry with key 3")
+	}
+
+	cache.Delete("2")
+
+	// (tail) 1 - 3 (head)
+	if cache.tail.Key != "1" {
+		t.Error("cache tail should have been the entry with key 1")
+	}
+	if cache.head.Key != "3" {
+		t.Error("cache head should have been the entry with key 3")
+	}
+	if cache.tail.next.Key != "3" {
+		t.Error("The entry key after the cache tail should have been 3")
+	}
+	if cache.head.previous.Key != "1" {
+		t.Error("The entry key after the cache tail should have been 1")
+	}
+
+	cache.Delete("1")
+
+	// (tail) 3 (head)
+	if cache.tail.Key != "3" {
+		t.Error("cache tail should have been the entry with key 3")
+	}
+	if cache.head.Key != "3" {
+		t.Error("cache head should have been the entry with key 3")
+	}
+
+	if cache.head != cache.tail {
+		t.Error("There should only be one entry in the cache")
+	}
+	if cache.head.previous != nil || cache.tail.next != nil {
+		t.Error("Since head == tail, there should be no prev/next")
 	}
 }
