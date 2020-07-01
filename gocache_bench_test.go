@@ -14,7 +14,7 @@ func BenchmarkMap_Get(b *testing.B) {
 	}
 }
 
-func BenchmarkMap_SetSmallestValue(b *testing.B) {
+func BenchmarkMap_SetSmallValue(b *testing.B) {
 	value := "a"
 	m := make(map[string]interface{})
 	for n := 0; n < b.N; n++ {
@@ -22,16 +22,8 @@ func BenchmarkMap_SetSmallestValue(b *testing.B) {
 	}
 }
 
-func BenchmarkMap_SetSmallValue(b *testing.B) {
-	value := strings.Repeat("a", 256)
-	m := make(map[string]interface{})
-	for n := 0; n < b.N; n++ {
-		m[strconv.Itoa(n)] = &value
-	}
-}
-
 func BenchmarkMap_SetMediumValue(b *testing.B) {
-	value := strings.Repeat("a", 1024*10)
+	value := strings.Repeat("a", 1024)
 	m := make(map[string]interface{})
 	for n := 0; n < b.N; n++ {
 		m[strconv.Itoa(n)] = &value
@@ -46,20 +38,14 @@ func BenchmarkMap_SetLargeValue(b *testing.B) {
 	}
 }
 
-func BenchmarkCache_SetSmallestValueWithMaxSize10(b *testing.B) {
+func BenchmarkCache_SetSmallValueWithMaxSize10(b *testing.B) {
 	value := "a"
 	cache := NewCache().WithMaxSize(10)
 	writeToCache(b, cache, value)
 }
 
-func BenchmarkCache_SetSmallValueWithMaxSize10(b *testing.B) {
-	value := strings.Repeat("a", 256)
-	cache := NewCache().WithMaxSize(10)
-	writeToCache(b, cache, value)
-}
-
 func BenchmarkCache_SetMediumValueWithMaxSize10(b *testing.B) {
-	value := strings.Repeat("a", 1024*10)
+	value := strings.Repeat("a", 1024)
 	cache := NewCache().WithMaxSize(10)
 	writeToCache(b, cache, value)
 }
@@ -70,20 +56,14 @@ func BenchmarkCache_SetLargeValueWithMaxSize10(b *testing.B) {
 	writeToCache(b, cache, value)
 }
 
-func BenchmarkCache_SetSmallestValueWithMaxSize1000(b *testing.B) {
+func BenchmarkCache_SetSmallValueWithMaxSize1000(b *testing.B) {
 	value := "a"
 	cache := NewCache().WithMaxSize(1000)
 	writeToCache(b, cache, value)
 }
 
-func BenchmarkCache_SetSmallValueWithMaxSize1000(b *testing.B) {
-	value := strings.Repeat("a", 256)
-	cache := NewCache().WithMaxSize(1000)
-	writeToCache(b, cache, value)
-}
-
 func BenchmarkCache_SetMediumValueWithMaxSize1000(b *testing.B) {
-	value := strings.Repeat("a", 1024*10)
+	value := strings.Repeat("a", 1024)
 	cache := NewCache().WithMaxSize(1000)
 	writeToCache(b, cache, value)
 }
@@ -94,20 +74,14 @@ func BenchmarkCache_SetLargeValueWithMaxSize1000(b *testing.B) {
 	writeToCache(b, cache, value)
 }
 
-func BenchmarkCache_SetSmallestValueWithMaxSize100000(b *testing.B) {
+func BenchmarkCache_SetSmallValueWithMaxSize100000(b *testing.B) {
 	value := "a"
 	cache := NewCache().WithMaxSize(100000)
 	writeToCache(b, cache, value)
 }
 
-func BenchmarkCache_SetSmallValueWithMaxSize100000(b *testing.B) {
-	value := strings.Repeat("a", 256)
-	cache := NewCache().WithMaxSize(100000)
-	writeToCache(b, cache, value)
-}
-
 func BenchmarkCache_SetMediumValueWithMaxSize100000(b *testing.B) {
-	value := strings.Repeat("a", 1024*10)
+	value := strings.Repeat("a", 1024)
 	cache := NewCache().WithMaxSize(100000)
 	writeToCache(b, cache, value)
 }
@@ -115,6 +89,24 @@ func BenchmarkCache_SetMediumValueWithMaxSize100000(b *testing.B) {
 func BenchmarkCache_SetLargeValueWithMaxSize100000(b *testing.B) {
 	value := strings.Repeat("a", 1024*100)
 	cache := NewCache().WithMaxSize(100000)
+	writeToCache(b, cache, value)
+}
+
+func BenchmarkCache_SetSmallValueWithMaxSize100000AndLRU(b *testing.B) {
+	value := "a"
+	cache := NewCache().WithMaxSize(100000).WithEvictionPolicy(LeastRecentlyUsed)
+	writeToCache(b, cache, value)
+}
+
+func BenchmarkCache_SetMediumValueWithMaxSize100000AndLRU(b *testing.B) {
+	value := strings.Repeat("a", 1024)
+	cache := NewCache().WithMaxSize(100000).WithEvictionPolicy(LeastRecentlyUsed)
+	writeToCache(b, cache, value)
+}
+
+func BenchmarkCache_SetLargeValueWithMaxSize100000AndLRU(b *testing.B) {
+	value := strings.Repeat("a", 1024*100)
+	cache := NewCache().WithMaxSize(100000).WithEvictionPolicy(LeastRecentlyUsed)
 	writeToCache(b, cache, value)
 }
 
