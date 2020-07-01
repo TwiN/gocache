@@ -87,3 +87,9 @@ func (cache *Cache) Count() int {
 	cache.mutex.Unlock()
 	return count
 }
+
+func (cache *Cache) Clear() {
+	cache.mutex.Lock()
+	cache.entries = make(map[string]*Entry)
+	cache.mutex.Unlock()
+}

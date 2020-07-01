@@ -14,7 +14,9 @@ go get github.com/TwinProduction/gocache
 ```
 
 ```golang
-cache := NewCache().WithMaxSize(1000).WithEvictionPolicy(gocache.LeastRecentlyUsed)
+cache := gocache.NewCache().WithMaxSize(1000).WithEvictionPolicy(gocache.LeastRecentlyUsed)
 cache.Set("key", "value")
 value, ok := cache.Get("key")
+cache.Delete("key")
+cache.Count()
 ```
