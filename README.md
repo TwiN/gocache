@@ -1,5 +1,7 @@
 # gocache
 
+![build](https://github.com/TwinProduction/gocache/workflows/build/badge.svg?branch=master)
+
 An extremely lightweight and minimal cache.
 
 It supports the following cache eviction policies: 
