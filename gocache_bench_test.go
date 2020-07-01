@@ -18,7 +18,7 @@ func BenchmarkMap_SetSmallestValue(b *testing.B) {
 	value := "a"
 	m := make(map[string]interface{})
 	for n := 0; n < b.N; n++ {
-		m[strconv.Itoa(n)] = value
+		m[strconv.Itoa(n)] = &value
 	}
 }
 
@@ -26,7 +26,7 @@ func BenchmarkMap_SetSmallValue(b *testing.B) {
 	value := strings.Repeat("a", 256)
 	m := make(map[string]interface{})
 	for n := 0; n < b.N; n++ {
-		m[strconv.Itoa(n)] = value
+		m[strconv.Itoa(n)] = &value
 	}
 }
 
@@ -34,7 +34,7 @@ func BenchmarkMap_SetMediumValue(b *testing.B) {
 	value := strings.Repeat("a", 1024*10)
 	m := make(map[string]interface{})
 	for n := 0; n < b.N; n++ {
-		m[strconv.Itoa(n)] = value
+		m[strconv.Itoa(n)] = &value
 	}
 }
 
@@ -42,7 +42,7 @@ func BenchmarkMap_SetLargeValue(b *testing.B) {
 	value := strings.Repeat("a", 1024*100)
 	m := make(map[string]interface{})
 	for n := 0; n < b.N; n++ {
-		m[strconv.Itoa(n)] = value
+		m[strconv.Itoa(n)] = &value
 	}
 }
 
@@ -91,6 +91,30 @@ func BenchmarkCache_SetMediumValueWithMaxSize1000(b *testing.B) {
 func BenchmarkCache_SetLargeValueWithMaxSize1000(b *testing.B) {
 	value := strings.Repeat("a", 1024*100)
 	cache := NewCache().WithMaxSize(1000)
+	writeToCache(b, cache, value)
+}
+
+func BenchmarkCache_SetSmallestValueWithMaxSize100000(b *testing.B) {
+	value := "a"
+	cache := NewCache().WithMaxSize(100000)
+	writeToCache(b, cache, value)
+}
+
+func BenchmarkCache_SetSmallValueWithMaxSize100000(b *testing.B) {
+	value := strings.Repeat("a", 256)
+	cache := NewCache().WithMaxSize(100000)
+	writeToCache(b, cache, value)
+}
+
+func BenchmarkCache_SetMediumValueWithMaxSize100000(b *testing.B) {
+	value := strings.Repeat("a", 1024*10)
+	cache := NewCache().WithMaxSize(100000)
+	writeToCache(b, cache, value)
+}
+
+func BenchmarkCache_SetLargeValueWithMaxSize100000(b *testing.B) {
+	value := strings.Repeat("a", 1024*100)
+	cache := NewCache().WithMaxSize(100000)
 	writeToCache(b, cache, value)
 }
 
