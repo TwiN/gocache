@@ -10,15 +10,32 @@ It supports the following cache eviction policies:
 
 
 ## Usage
-
 ```
 go get github.com/TwinProduction/gocache
 ```
 
-```golang
+### Initializing the cache
+```
 cache := gocache.NewCache().WithMaxSize(1000).WithEvictionPolicy(gocache.LeastRecentlyUsed)
+```
+
+### Creating or updating an entry
+```
 cache.Set("key", "value")
+```
+
+### Getting an entry
+```
 value, ok := cache.Get("key")
+```
+
+### Deleting an entry
+```
 cache.Delete("key")
+```
+
+### Other
+```
 cache.Count()
+cache.Clear()
 ```
