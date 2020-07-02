@@ -6,7 +6,10 @@ import (
 )
 
 type Cache struct {
-	MaxSize        int
+	// MaxSize is the maximum amount of entries that can be in the cache at any given time
+	MaxSize int
+
+	// EvictionPolicy is the eviction policy
 	EvictionPolicy EvictionPolicy
 
 	entries map[string]*Entry
@@ -16,6 +19,7 @@ type Cache struct {
 	tail *Entry
 }
 
+// NewCache creates a new Cache
 func NewCache() *Cache {
 	return &Cache{
 		MaxSize:        1000,
@@ -25,16 +29,20 @@ func NewCache() *Cache {
 	}
 }
 
+// WithMaxSize sets the maximum amount of entries that can be in the cache at any given time
 func (cache *Cache) WithMaxSize(maxSize int) *Cache {
 	cache.MaxSize = maxSize
 	return cache
 }
 
+// WithEvictionPolicy sets eviction algorithm.
+// Defaults to FirstInFirstOut (FIFO)
 func (cache *Cache) WithEvictionPolicy(policy EvictionPolicy) *Cache {
 	cache.EvictionPolicy = policy
 	return cache
 }
 
+// Set creates or updates a key with a given value
 func (cache *Cache) Set(key string, value interface{}) {
 	cache.mutex.Lock()
 	entry, ok := cache.entries[key]
@@ -137,6 +145,7 @@ func (cache *Cache) Get(key string) (interface{}, bool) {
 	return entry.Value, true
 }
 
+// Count returns the total amount of entries in the cache
 func (cache *Cache) Count() int {
 	cache.mutex.Lock()
 	count := len(cache.entries)
@@ -144,6 +153,7 @@ func (cache *Cache) Count() int {
 	return count
 }
 
+// Clear deletes all entries from the cache
 func (cache *Cache) Clear() {
 	cache.mutex.Lock()
 	cache.entries = make(map[string]*Entry)
