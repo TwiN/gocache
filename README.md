@@ -1,6 +1,7 @@
 # gocache
 
-![build](https://github.com/TwinProduction/gocache/workflows/build/badge.svg?branch=master)
+![build](https://github.com/TwinProduction/gocache/workflows/build/badge.svg?branch=master) 
+[![Go Report Card](https://goreportcard.com/badge/github.com/TwinProduction/gocache)](https://goreportcard.com/report/github.com/TwinProduction/gocache)
 
 An extremely lightweight and minimal cache.
 
