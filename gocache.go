@@ -25,7 +25,7 @@ type Cache struct {
 	EvictionPolicy EvictionPolicy
 
 	entries map[string]*Entry
-	mutex   sync.Mutex
+	mutex   sync.RWMutex
 
 	head *Entry
 	tail *Entry
@@ -37,7 +37,7 @@ func NewCache() *Cache {
 		MaxSize:        DefaultMaxSize,
 		EvictionPolicy: FirstInFirstOut,
 		entries:        make(map[string]*Entry),
-		mutex:          sync.Mutex{},
+		mutex:          sync.RWMutex{},
 	}
 }
 
@@ -99,9 +99,9 @@ func (cache *Cache) Set(key string, value interface{}) {
 // If there is no such entry, the value returned will be nil and the boolean will be false
 // If there is an entry, the value returned will be the value cached and the boolean will be true
 func (cache *Cache) Get(key string) (interface{}, bool) {
-	cache.mutex.Lock()
+	cache.mutex.RLock()
 	entry, ok := cache.entries[key]
-	cache.mutex.Unlock()
+	cache.mutex.RUnlock()
 	if !ok {
 		return nil, false
 	}
@@ -154,9 +154,9 @@ func (cache *Cache) SaveToFile(path string) error {
 	defer file.Close()
 	writer := bufio.NewWriter(file)
 	encoder := gob.NewEncoder(writer)
-	cache.mutex.Lock()
+	cache.mutex.RLock()
 	err = encoder.Encode(cache.entries)
-	cache.mutex.Unlock()
+	cache.mutex.RUnlock()
 	if err != nil {
 		return err
 	}
