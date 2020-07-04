@@ -73,6 +73,55 @@ func (cache *Cache) Set(key string, value interface{}) {
 	}
 }
 
+// Get retrieves an entry using the key passed as parameter
+// If there is no such entry, the value returned will be nil and the boolean will be false
+// If there is an entry, the value returned will be the value cached and the boolean will be true
+func (cache *Cache) Get(key string) (interface{}, bool) {
+	cache.mutex.Lock()
+	entry, ok := cache.entries[key]
+	cache.mutex.Unlock()
+	if !ok {
+		return nil, false
+	}
+	if cache.EvictionPolicy == LeastRecentlyUsed {
+		entry.Accessed()
+		if cache.head == entry {
+			return entry.Value, true
+		}
+		// Because the eviction policy is LRU, we need to move the entry back to HEAD
+		cache.moveExistingEntryToHead(entry)
+		return entry.Value, true
+	}
+}
+
+// Delete removes a key from the cache
+func (cache *Cache) Delete(key string) {
+	cache.mutex.Lock()
+	entry, ok := cache.entries[key]
+	if ok {
+		cache.removeExistingEntry(entry)
+		delete(cache.entries, key)
+	}
+	cache.mutex.Unlock()
+}
+
+// Count returns the total amount of entries in the cache
+func (cache *Cache) Count() int {
+	cache.mutex.Lock()
+	count := len(cache.entries)
+	cache.mutex.Unlock()
+	return count
+}
+
+// Clear deletes all entries from the cache
+func (cache *Cache) Clear() {
+	cache.mutex.Lock()
+	cache.entries = make(map[string]*Entry)
+	cache.head = nil
+	cache.tail = nil
+	cache.mutex.Unlock()
+}
+
 func (cache *Cache) moveExistingEntryToHead(entry *Entry) {
 	if !(entry == cache.head && entry == cache.tail) {
 		cache.removeExistingEntry(entry)
@@ -111,53 +160,5 @@ func (cache *Cache) evict() {
 		cache.tail = cache.tail.next
 		cache.tail.previous = nil
 	}
-	cache.mutex.Unlock()
-}
-
-func (cache *Cache) Delete(key string) {
-	cache.mutex.Lock()
-	entry, ok := cache.entries[key]
-	if ok {
-		cache.removeExistingEntry(entry)
-		delete(cache.entries, key)
-	}
-	cache.mutex.Unlock()
-}
-
-// Get retrieves an entry using the key passed as parameter
-// If there is no such entry, the value returned will be nil and the boolean will be false
-// If there is an entry, the value returned will be the value cached and the boolean will be true
-func (cache *Cache) Get(key string) (interface{}, bool) {
-	cache.mutex.Lock()
-	entry, ok := cache.entries[key]
-	cache.mutex.Unlock()
-	if !ok {
-		return nil, false
-	}
-	if cache.EvictionPolicy == LeastRecentlyUsed {
-		entry.Accessed()
-		if cache.head == entry {
-			return entry.Value, true
-		}
-		// Because the eviction policy is LRU, we need to move the entry back to HEAD
-		cache.moveExistingEntryToHead(entry)
-	}
-	return entry.Value, true
-}
-
-// Count returns the total amount of entries in the cache
-func (cache *Cache) Count() int {
-	cache.mutex.Lock()
-	count := len(cache.entries)
-	cache.mutex.Unlock()
-	return count
-}
-
-// Clear deletes all entries from the cache
-func (cache *Cache) Clear() {
-	cache.mutex.Lock()
-	cache.entries = make(map[string]*Entry)
-	cache.head = nil
-	cache.tail = nil
 	cache.mutex.Unlock()
 }
