@@ -90,11 +90,10 @@ func (cache *Cache) Get(key string) (interface{}, bool) {
 		}
 		// Because the eviction policy is LRU, we need to move the entry back to HEAD
 		cache.moveExistingEntryToHead(entry)
-		return entry.Value, true
 	}
+	return entry.Value, true
 }
 
-// Delete removes a key from the cache
 func (cache *Cache) Delete(key string) {
 	cache.mutex.Lock()
 	entry, ok := cache.entries[key]
