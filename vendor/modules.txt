@@ -1,0 +1,3 @@
+# github.com/tidwall/redcon v1.3.2
+## explicit
+github.com/tidwall/redcon
