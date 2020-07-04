@@ -94,6 +94,7 @@ func (cache *Cache) Get(key string) (interface{}, bool) {
 	return entry.Value, true
 }
 
+// Delete removes a key from the cache
 func (cache *Cache) Delete(key string) {
 	cache.mutex.Lock()
 	entry, ok := cache.entries[key]
