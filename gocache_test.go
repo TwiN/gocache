@@ -2,8 +2,14 @@ package gocache
 
 import (
 	"fmt"
+	"os"
+	"strconv"
 	"testing"
 	"time"
+)
+
+const (
+	TestCacheFile = "test.cache"
 )
 
 func TestCache_Get(t *testing.T) {
@@ -369,5 +375,57 @@ func TestCache_Delete(t *testing.T) {
 	}
 	if cache.head.previous != nil || cache.tail.next != nil {
 		t.Error("Since head == tail, there should be no prev/next")
+	}
+}
+
+func TestCache_SaveToFile(t *testing.T) {
+	defer os.Remove(TestCacheFile)
+	cache := NewCache()
+	for n := 0; n < 10; n++ {
+		cache.Set(strconv.Itoa(n), fmt.Sprintf("v%d", n))
+	}
+	err := cache.SaveToFile(TestCacheFile)
+	if err != nil {
+		panic(err)
+	}
+	newCache := NewCache()
+	numberOfEntriesEvicted, err := newCache.ReadFromFile(TestCacheFile)
+	if err != nil {
+		panic(err)
+	}
+	if numberOfEntriesEvicted != 0 {
+		t.Error("expected 0 entries to have been evicted, but got", numberOfEntriesEvicted)
+	}
+	if newCache.Count() != 10 {
+		t.Error("expected newCache to have 10 entries, but got", newCache.Count())
+	}
+}
+
+func TestCache_ReadFromFile(t *testing.T) {
+	defer os.Remove(TestCacheFile)
+	cache := NewCache()
+	for n := 0; n < 10; n++ {
+		cache.Set(strconv.Itoa(n), fmt.Sprintf("v%d", n))
+	}
+	err := cache.SaveToFile(TestCacheFile)
+	if err != nil {
+		panic(err)
+	}
+	newCache := cache.WithMaxSize(7)
+	numberOfEntriesEvicted, err := newCache.ReadFromFile(TestCacheFile)
+	if err != nil {
+		panic(err)
+	}
+	if numberOfEntriesEvicted != 3 {
+		t.Error("expected 3 entries to have been evicted, but got", numberOfEntriesEvicted)
+	}
+	if newCache.Count() != 7 {
+		t.Error("expected newCache to have 7 entries since its MaxSize is 7, but got", newCache.Count())
+	}
+	for key, value := range cache.entries {
+		expectedValue := fmt.Sprintf("v%s", key)
+		if value.Value != expectedValue {
+			t.Errorf("key %s should've had value '%s', but had '%s' instead", key, expectedValue, value.Value)
+		}
 	}
 }

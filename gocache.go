@@ -1,8 +1,17 @@
 package gocache
 
 import (
+	"bufio"
+	"encoding/gob"
+	"os"
 	"sync"
 	"time"
+)
+
+const (
+	// NoMaxSize means that the cache has no maximum number of entries in the cache
+	// Setting MaxSize to this value also means there will be no eviction
+	NoMaxSize = 0
 )
 
 type Cache struct {
@@ -19,7 +28,7 @@ type Cache struct {
 	tail *Entry
 }
 
-// NewCache creates a new Cache
+// NewCache creates a new Cachealso
 func NewCache() *Cache {
 	return &Cache{
 		MaxSize:        1000,
@@ -30,7 +39,11 @@ func NewCache() *Cache {
 }
 
 // WithMaxSize sets the maximum amount of entries that can be in the cache at any given time
+// A MaxSize of 0 or less means infinite
 func (cache *Cache) WithMaxSize(maxSize int) *Cache {
+	if maxSize < 0 {
+		maxSize = NoMaxSize
+	}
 	cache.MaxSize = maxSize
 	return cache
 }
@@ -66,6 +79,12 @@ func (cache *Cache) Set(key string, value interface{}) {
 		cache.moveExistingEntryToHead(entry)
 	}
 	cache.entries[key] = entry
+	// If the cache doesn't have a MaxSize, then there's no point checking if we need to evict
+	// an entry, so we'll just return now
+	if cache.MaxSize == NoMaxSize {
+		cache.mutex.Unlock()
+		return
+	}
 	cacheSize := len(cache.entries)
 	cache.mutex.Unlock()
 	if cacheSize > cache.MaxSize {
@@ -120,6 +139,59 @@ func (cache *Cache) Clear() {
 	cache.head = nil
 	cache.tail = nil
 	cache.mutex.Unlock()
+}
+
+// SaveToFile stores the content of the cache to a file so that it can be read using
+// the ReadFromFile function
+func (cache *Cache) SaveToFile(path string) error {
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	writer := bufio.NewWriter(file)
+	encoder := gob.NewEncoder(writer)
+	cache.mutex.Lock()
+	err = encoder.Encode(cache.entries)
+	cache.mutex.Unlock()
+	if err != nil {
+		return err
+	}
+	return writer.Flush()
+}
+
+// ReadFromFile populates the cache using a file created using cache.SaveToFile(path)
+//
+// Note that if the number of entries retrieved from the file exceed the configured MaxSize,
+// the extra entries will be automatically evicted according to the EvictionPolicy configured.
+// This function returns the number of entries evicted, and because this function only reads
+// from a file and does not modify it, you can safely retry this function after configuring
+// the cache with the appropriate MaxSize, should you desire to.
+func (cache *Cache) ReadFromFile(path string) (int, error) {
+	file, err := os.OpenFile(path, os.O_RDONLY, os.ModePerm)
+	if err != nil {
+		return 0, err
+	}
+	defer file.Close()
+	reader := bufio.NewReader(file)
+	decoder := gob.NewDecoder(reader)
+	cache.mutex.Lock()
+	err = decoder.Decode(&cache.entries)
+	cache.mutex.Unlock()
+	if err != nil {
+		return 0, err
+	}
+	// If the cache doesn't have a MaxSize, then there's no point checking if we need to evict
+	// an entry, so we'll just return now
+	if cache.MaxSize == NoMaxSize {
+		return 0, nil
+	}
+	numberOfEvictions := 0
+	for cache.Count() > cache.MaxSize {
+		numberOfEvictions++
+		cache.evict()
+	}
+	return numberOfEvictions, nil
 }
 
 func (cache *Cache) moveExistingEntryToHead(entry *Entry) {
