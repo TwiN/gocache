@@ -12,7 +12,7 @@ It supports the following cache eviction policies:
 
 ## Usage
 ```
-go get github.com/TwinProduction/gocache
+go get -u github.com/TwinProduction/gocache
 ```
 
 ### Initializing the cache
@@ -35,8 +35,63 @@ value, ok := cache.Get("key")
 cache.Delete("key")
 ```
 
+### Persistence
+
+While gocache is an in-memory cache, you can still save the content of the cache in a file
+and vice versa.
+
+To save the content of the cache to a file:
+```golang
+err := cache.SaveToFile(TestCacheFile)
+```
+
+To retrieve the content of the cache from a file:
+```golang
+numberOfEntriesEvicted, err := newCache.ReadFromFile(TestCacheFile)
+```
+The `numberOfEntriesEvicted` will be non-zero only if the number of entries 
+in the file is higher than the cache's configured `MaxSize`.
+
 ### Other
 ```
 cache.Count()
 cache.Clear()
 ```
+
+### Server
+
+For the sake of convenience, a ready-to-go cache server is available 
+through the `gocacheserver` package. 
+
+The reason why the server is in a different package is because `gocache` does not use 
+any external dependencies, but rather than re-inventing the wheel, the server 
+implementation uses redcon, which is a Redis server framework for Go.
+
+That way, those who desire to use gocache without the server will not add any extra dependencies
+as long as they don't import the `gocacheserver` package. 
+
+```golang
+package main
+
+import (
+	"github.com/TwinProduction/gocache"
+	"github.com/TwinProduction/gocache/gocacheserver"
+)
+
+func main() {
+	cache := gocache.NewCache()
+	server := gocacheserver.NewServer(cache)
+	server.Start()
+}
+```
+
+Any Redis client should be able to interact with the server, though only the following instructions are supported:
+- [X] GET
+- [X] SET
+- [X] DEL
+- [X] PING
+- [X] QUIT
+- [ ] INFO
+- [ ] KEYS
+- [ ] EXISTS
+- [ ] ECHO
