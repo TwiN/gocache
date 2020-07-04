@@ -12,6 +12,9 @@ const (
 	// NoMaxSize means that the cache has no maximum number of entries in the cache
 	// Setting MaxSize to this value also means there will be no eviction
 	NoMaxSize = 0
+
+	// DefaultMaxSize is the max size set if no max size is specified
+	DefaultMaxSize = 1000
 )
 
 type Cache struct {
@@ -31,7 +34,7 @@ type Cache struct {
 // NewCache creates a new Cachealso
 func NewCache() *Cache {
 	return &Cache{
-		MaxSize:        1000,
+		MaxSize:        DefaultMaxSize,
 		EvictionPolicy: FirstInFirstOut,
 		entries:        make(map[string]*Entry),
 		mutex:          sync.Mutex{},
