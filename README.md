@@ -110,6 +110,7 @@ Arch Linux
 x86_64 Linux 5.7.7-arch1-1
 i7-8550U 8x 4GHz
 16G RAM
+Go 1.14.4
 ```
 
 ### Gocache

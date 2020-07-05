@@ -386,12 +386,12 @@ func TestCache_SaveToFile(t *testing.T) {
 	}
 	err := cache.SaveToFile(TestCacheFile)
 	if err != nil {
-		panic(err)
+		t.Fatal("shouldn't have returned an error, but got:", err.Error())
 	}
 	newCache := NewCache()
 	numberOfEntriesEvicted, err := newCache.ReadFromFile(TestCacheFile)
 	if err != nil {
-		panic(err)
+		t.Fatal("shouldn't have returned an error, but got:", err.Error())
 	}
 	if numberOfEntriesEvicted != 0 {
 		t.Error("expected 0 entries to have been evicted, but got", numberOfEntriesEvicted)
