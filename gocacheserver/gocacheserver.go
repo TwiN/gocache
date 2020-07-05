@@ -52,7 +52,9 @@ func (server *Server) Start() error {
 	if server.AutoSaveInterval != 0 {
 		go server.autoSave()
 	}
-	err := redcon.ListenAndServe(fmt.Sprintf(":%d", DefaultServerPort),
+	address := fmt.Sprintf(":%d", DefaultServerPort)
+	log.Printf("Listening on %s", address)
+	err := redcon.ListenAndServe(address,
 		func(conn redcon.Conn, cmd redcon.Command) {
 			switch strings.ToUpper(string(cmd.Args[0])) {
 			case "GET":
