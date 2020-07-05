@@ -117,7 +117,8 @@ func (cache *Cache) Get(key string) (interface{}, bool) {
 }
 
 // Delete removes a key from the cache
-func (cache *Cache) Delete(key string) {
+// Returns false if the key did not exist.
+func (cache *Cache) Delete(key string) bool {
 	cache.mutex.Lock()
 	entry, ok := cache.entries[key]
 	if ok {
@@ -125,6 +126,7 @@ func (cache *Cache) Delete(key string) {
 		delete(cache.entries, key)
 	}
 	cache.mutex.Unlock()
+	return ok
 }
 
 // Count returns the total amount of entries in the cache
