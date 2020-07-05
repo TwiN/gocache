@@ -61,8 +61,10 @@ func (cache *Cache) WithEvictionPolicy(policy EvictionPolicy) *Cache {
 
 // Set creates or updates a key with a given value
 func (cache *Cache) Set(key string, value interface{}) {
-	cache.mutex.Lock()
+	cache.mutex.RLock()
 	entry, ok := cache.entries[key]
+	cache.mutex.RUnlock()
+	cache.mutex.Lock()
 	if !ok {
 		// Cache entry doesn't exist, so we have to create a new one
 		entry = &Entry{
@@ -77,23 +79,26 @@ func (cache *Cache) Set(key string, value interface{}) {
 			cache.head.next = entry
 		}
 		cache.head = entry
+		cache.entries[key] = entry
 	} else {
 		entry.Value = value
 		// Because we just updated the entry, we need to move it back to HEAD
 		cache.moveExistingEntryToHead(entry)
 	}
-	cache.entries[key] = entry
+	cache.mutex.Unlock()
 	// If the cache doesn't have a MaxSize, then there's no point checking if we need to evict
 	// an entry, so we'll just return now
 	if cache.MaxSize == NoMaxSize {
-		cache.mutex.Unlock()
 		return
 	}
+	cache.mutex.RLock()
 	cacheSize := len(cache.entries)
+	cache.mutex.RUnlock()
 	if cacheSize > cache.MaxSize {
+		cache.mutex.Lock()
 		cache.evict()
+		cache.mutex.Unlock()
 	}
-	cache.mutex.Unlock()
 }
 
 // Get retrieves an entry using the key passed as parameter

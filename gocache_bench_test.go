@@ -124,14 +124,14 @@ func BenchmarkCache_GetWithMaxSize10(b *testing.B) {
 	}
 }
 
-func BenchmarkCache_GetAndSetConcurrentlyWithMaxSize10(b *testing.B) {
+func BenchmarkCache_GetAndSetConcurrently(b *testing.B) {
 	data := map[string]string{
 		"k1": "v1",
 		"k2": "v2",
 		"k3": "v3",
 		"k4": "v4",
 	}
-	cache := NewCache().WithMaxSize(10)
+	cache := NewCache()
 
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {

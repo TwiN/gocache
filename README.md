@@ -101,8 +101,11 @@ Any Redis client should be able to interact with the server, though only the fol
 
 Using the following command:
 ```
-redis-benchmark -p 6379 -t set,get -n 10000000 -q -P 512 -c 512
+redis-benchmark -p 6379 -t set,get -n 10000000 -r 100000 -q -P 512 -c 512
 ```
+
+In English, the command above will send 10M requests using 100k unique keys concurrently across 512 clients.
+On top of that, each client pipelines 512 requests.
 
 On a machine with the following specs:
 ```
@@ -118,22 +121,22 @@ Go 1.14.4
 #### Without eviction
 
 With the following configuration:
-```
-cache := gocache.NewCache().WithEvictionPolicy(gocache.LeastRecentlyUsed).WithMaxSize(10000000)
+```golang
+cache := gocache.NewCache().WithEvictionPolicy(gocache.LeastRecentlyUsed).WithMaxSize(gocache.NoMaxSize)
 server := gocacheserver.NewServer(cache)
 server.Start()
 ```
 
-Single-threaded (`GOMAXPROCS=1 go run examples/server.go`):
+Single-threaded (`GOMAXPROCS=1 go run examples/server/server.go`):
 ```
-SET: 2239727.50 requests per second
-GET: 2681068.00 requests per second
+SET: 791545.38 requests per second
+GET: 711264.81 requests per second
 ```
 
-Multi-threaded (`go run examples/server.go`):
+Multi-threaded (`go run examples/server/server.go`):
 ```
-SET: 2573476.00 requests per second
-GET: 6399190.50 requests per second
+SET: 1240345.25 requests per second
+GET: 1103784.00 requests per second
 ```
 
 #### With eviction
@@ -145,24 +148,26 @@ server := gocacheserver.NewServer(cache)
 server.Start()
 ```
 
-Single-threaded (`GOMAXPROCS=1 go run examples/server.go`):
+Single-threaded (`GOMAXPROCS=1 go run examples/server/server.go`):
 ```
-SET: 2305298.50 requests per second
-GET: 2745096.00 requests per second
-```
-
-Multi-threaded (`go run examples/server.go`):
-```
-SET: 2576740.00 requests per second
-GET: 6451397.00 requests per second
+SET: 1311353.75 requests per second
+GET: 2296299.50 requests per second
 ```
 
-
-### Redis
-
-Using the default configuration with `redis-server`:
+Multi-threaded (`go run examples/server/server.go`):
 ```
-SET: 2105156.50 requests per second
-GET: 2842900.75 requests per second
+SET: 1115123.38 requests per second
+GET: 2413930.25 requests per second
+```
+
+
+### Redis 6
+
+Using the default configuration with `redis-server`.
+
+Multi-threaded, (`redis-server`, version 6.0.5)
+```
+SET: 1226763.12 requests per second
+GET: 1551812.75 requests per second
 ```
 
