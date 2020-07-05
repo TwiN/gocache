@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/gob"
 	"os"
+	"sort"
 	"sync"
 	"time"
 )
@@ -89,10 +90,10 @@ func (cache *Cache) Set(key string, value interface{}) {
 		return
 	}
 	cacheSize := len(cache.entries)
-	cache.mutex.Unlock()
 	if cacheSize > cache.MaxSize {
 		cache.evict()
 	}
+	cache.mutex.Unlock()
 }
 
 // Get retrieves an entry using the key passed as parameter
@@ -111,7 +112,10 @@ func (cache *Cache) Get(key string) (interface{}, bool) {
 			return entry.Value, true
 		}
 		// Because the eviction policy is LRU, we need to move the entry back to HEAD
+		// XXX: the following lock really hurts perf. Perhaps we should create a mutex specifically for head/tail?
+		cache.mutex.Lock()
 		cache.moveExistingEntryToHead(entry)
+		cache.mutex.Unlock()
 	}
 	return entry.Value, true
 }
@@ -131,9 +135,9 @@ func (cache *Cache) Delete(key string) bool {
 
 // Count returns the total amount of entries in the cache
 func (cache *Cache) Count() int {
-	cache.mutex.Lock()
+	cache.mutex.RLock()
 	count := len(cache.entries)
-	cache.mutex.Unlock()
+	cache.mutex.RUnlock()
 	return count
 }
 
@@ -182,20 +186,45 @@ func (cache *Cache) ReadFromFile(path string) (int, error) {
 	decoder := gob.NewDecoder(reader)
 	cache.mutex.Lock()
 	err = decoder.Decode(&cache.entries)
-	cache.mutex.Unlock()
 	if err != nil {
 		return 0, err
+	}
+	// Because pointers don't get stored in the file, we need to relink everything from head to tail
+	var entries []*Entry
+	for _, v := range cache.entries {
+		entries = append(entries, v)
+	}
+	// Sort the slice of entries from oldest to newest
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].RelevantTimestamp.Before(entries[j].RelevantTimestamp)
+	})
+	// Relink the nodes from tail to head
+	var previous *Entry
+	for i := range entries {
+		current := entries[i]
+		if previous == nil {
+			cache.tail = current
+			cache.head = current
+		} else {
+			previous.next = current
+			current.previous = previous
+			cache.head = current
+		}
+		previous = entries[i]
 	}
 	// If the cache doesn't have a MaxSize, then there's no point checking if we need to evict
 	// an entry, so we'll just return now
 	if cache.MaxSize == NoMaxSize {
+		cache.mutex.Unlock()
 		return 0, nil
 	}
+	// Evict until the total number of entries matches the cache's maximum size
 	numberOfEvictions := 0
-	for cache.Count() > cache.MaxSize {
+	for len(cache.entries) > cache.MaxSize {
 		numberOfEvictions++
 		cache.evict()
 	}
+	cache.mutex.Unlock()
 	return numberOfEvictions, nil
 }
 
@@ -227,9 +256,7 @@ func (cache *Cache) removeExistingEntry(entry *Entry) {
 }
 
 func (cache *Cache) evict() {
-	cache.mutex.Lock()
 	if cache.tail == nil || len(cache.entries) == 0 {
-		cache.mutex.Unlock()
 		return
 	}
 	if cache.tail != nil {
@@ -237,5 +264,4 @@ func (cache *Cache) evict() {
 		cache.tail = cache.tail.next
 		cache.tail.previous = nil
 	}
-	cache.mutex.Unlock()
 }

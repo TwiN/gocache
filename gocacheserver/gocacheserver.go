@@ -52,6 +52,15 @@ func (server *Server) WithPort(port int) *Server {
 func (server *Server) Start() error {
 	if server.AutoSaveInterval != 0 {
 		go server.autoSave()
+		defer func() {
+			log.Printf("Saving to %s before closing...", server.AutoSaveFile)
+			start := time.Now()
+			err := server.Cache.SaveToFile(server.AutoSaveFile)
+			if err != nil {
+				log.Printf("error while autosaving: %s", err.Error())
+			}
+			log.Printf("Saved successfully in %s", time.Since(start))
+		}()
 	}
 	address := fmt.Sprintf(":%d", DefaultServerPort)
 	log.Printf("Listening on %s", address)
