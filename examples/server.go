@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	cache := gocache.NewCache()
+	cache := gocache.NewCache().WithEvictionPolicy(gocache.LeastRecentlyUsed).WithMaxSize(10000)
 	server := gocacheserver.NewServer(cache)
 	server.Start()
 }

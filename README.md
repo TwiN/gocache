@@ -95,3 +95,73 @@ Any Redis client should be able to interact with the server, though only the fol
 - [ ] KEYS
 - [ ] EXISTS
 - [ ] ECHO
+
+
+## Performance
+
+Using the following command:
+```
+redis-benchmark -p 6379 -t set,get -n 10000000 -q -P 512 -c 512
+```
+
+On a machine with the following specs:
+```
+Arch Linux
+x86_64 Linux 5.7.7-arch1-1
+i7-8550U 8x 4GHz
+16G RAM
+```
+
+### Gocache
+
+#### Without eviction
+
+With the following configuration:
+```
+cache := gocache.NewCache().WithEvictionPolicy(gocache.LeastRecentlyUsed).WithMaxSize(10000000)
+server := gocacheserver.NewServer(cache)
+server.Start()
+```
+
+Single-threaded (`GOMAXPROCS=1 go run examples/server.go`):
+```
+SET: 2239727.50 requests per second
+GET: 2681068.00 requests per second
+```
+
+Multi-threaded (`go run examples/server.go`):
+```
+SET: 2573476.00 requests per second
+GET: 6399190.50 requests per second
+```
+
+#### With eviction
+
+With the following configuration:
+```
+cache := gocache.NewCache().WithEvictionPolicy(gocache.LeastRecentlyUsed).WithMaxSize(10000)
+server := gocacheserver.NewServer(cache)
+server.Start()
+```
+
+Single-threaded (`GOMAXPROCS=1 go run examples/server.go`):
+```
+SET: 2305298.50 requests per second
+GET: 2745096.00 requests per second
+```
+
+Multi-threaded (`go run examples/server.go`):
+```
+SET: 2576740.00 requests per second
+GET: 6451397.00 requests per second
+```
+
+
+### Redis
+
+Using the default configuration with `redis-server`:
+```
+SET: 2105156.50 requests per second
+GET: 2842900.75 requests per second
+```
+
