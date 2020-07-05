@@ -59,7 +59,7 @@ func (server *Server) Start() error {
 			switch strings.ToUpper(string(cmd.Args[0])) {
 			case "GET":
 				if len(cmd.Args) != 2 {
-					conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
+					conn.WriteError(fmt.Sprintf("ERR wrong number of arguments for '%s' command", string(cmd.Args[0])))
 					return
 				}
 				val, ok := server.Cache.Get(string(cmd.Args[1]))
@@ -70,14 +70,14 @@ func (server *Server) Start() error {
 				}
 			case "SET":
 				if len(cmd.Args) != 3 {
-					conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
+					conn.WriteError(fmt.Sprintf("ERR wrong number of arguments for '%s' command", string(cmd.Args[0])))
 					return
 				}
 				server.Cache.Set(string(cmd.Args[1]), cmd.Args[2])
 				conn.WriteString("OK")
 			case "DEL":
 				if len(cmd.Args) != 2 {
-					conn.WriteError("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
+					conn.WriteError(fmt.Sprintf("ERR wrong number of arguments for '%s' command", string(cmd.Args[0])))
 					return
 				}
 				server.Cache.Delete(string(cmd.Args[1]))
@@ -88,7 +88,7 @@ func (server *Server) Start() error {
 				conn.WriteString("OK")
 				conn.Close()
 			default:
-				conn.WriteError("ERR unknown command '" + string(cmd.Args[0]) + "'")
+				conn.WriteError(fmt.Sprintf("ERR unknown command '%s'", string(cmd.Args[0])))
 			}
 		},
 		func(conn redcon.Conn) bool {
