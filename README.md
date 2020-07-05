@@ -93,8 +93,8 @@ Any Redis client should be able to interact with the server, though only the fol
 - [X] QUIT
 - [ ] INFO
 - [ ] KEYS
-- [ ] EXISTS
-- [ ] ECHO
+- [X] EXISTS
+- [X] ECHO
 
 
 ## Performance

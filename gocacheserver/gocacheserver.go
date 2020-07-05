@@ -25,6 +25,7 @@ type Server struct {
 	AutoSaveFile     string
 }
 
+// NewServer creates a new cache server
 func NewServer(cache *gocache.Cache) *Server {
 	return &Server{
 		Cache: cache,
@@ -76,17 +77,42 @@ func (server *Server) Start() error {
 				server.Cache.Set(string(cmd.Args[1]), cmd.Args[2])
 				conn.WriteString("OK")
 			case "DEL":
-				if len(cmd.Args) != 2 {
+				if len(cmd.Args) < 2 {
 					conn.WriteError(fmt.Sprintf("ERR wrong number of arguments for '%s' command", string(cmd.Args[0])))
 					return
 				}
-				server.Cache.Delete(string(cmd.Args[1]))
-				conn.WriteInt(1)
+				numberOfKeysDeleted := 0
+				for index := range cmd.Args {
+					ok := server.Cache.Delete(string(cmd.Args[index]))
+					if ok {
+						numberOfKeysDeleted++
+					}
+				}
+				conn.WriteInt(numberOfKeysDeleted)
+			case "EXISTS":
+				if len(cmd.Args) < 2 {
+					conn.WriteError(fmt.Sprintf("ERR wrong number of arguments for '%s' command", string(cmd.Args[0])))
+					return
+				}
+				numberOfExistingKeys := 0
+				for index := range cmd.Args {
+					_, ok := server.Cache.Get(string(cmd.Args[index]))
+					if ok {
+						numberOfExistingKeys++
+					}
+				}
+				conn.WriteInt(numberOfExistingKeys)
 			case "PING":
 				conn.WriteString("PONG")
 			case "QUIT":
 				conn.WriteString("OK")
 				conn.Close()
+			case "ECHO":
+				if len(cmd.Args) != 2 {
+					conn.WriteError(fmt.Sprintf("ERR wrong number of arguments for '%s' command", string(cmd.Args[0])))
+					return
+				}
+				conn.WriteBulk(cmd.Args[1])
 			default:
 				conn.WriteError(fmt.Sprintf("ERR unknown command '%s'", string(cmd.Args[0])))
 			}
