@@ -91,10 +91,7 @@ func (cache *Cache) Set(key string, value interface{}) {
 	if cache.MaxSize == NoMaxSize {
 		return
 	}
-	cache.mutex.RLock()
-	cacheSize := len(cache.entries)
-	cache.mutex.RUnlock()
-	if cacheSize > cache.MaxSize {
+	if cache.Count() > cache.MaxSize {
 		cache.mutex.Lock()
 		cache.evict()
 		cache.mutex.Unlock()
