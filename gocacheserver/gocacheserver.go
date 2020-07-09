@@ -139,6 +139,7 @@ func (server *Server) Start() error {
 	return err
 }
 
+// autoSave automatically saves every AutoSaveInterval
 func (server *Server) autoSave() {
 	for {
 		time.Sleep(server.AutoSaveInterval)
