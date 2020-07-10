@@ -24,6 +24,25 @@ func TestCache_Get(t *testing.T) {
 	}
 }
 
+func TestCache_GetAll(t *testing.T) {
+	cache := NewCache().WithMaxSize(10)
+	cache.Set("key1", "value1")
+	cache.Set("key2", "value2")
+	keyValues := cache.GetAll([]string{"key1", "key2", "key3"})
+	if len(keyValues) != 3 {
+		t.Error("expected length of map to be 3")
+	}
+	if keyValues["key1"] != "value1" {
+		t.Errorf("expected: %s, but got: %s", "value1", keyValues["key1"])
+	}
+	if keyValues["key2"] != "value2" {
+		t.Errorf("expected: %s, but got: %s", "value2", keyValues["key2"])
+	}
+	if value, ok := keyValues["key3"]; !ok || value != nil {
+		t.Errorf("expected key3 to exist and be nil, but got: %s", value)
+	}
+}
+
 func TestCache_Set(t *testing.T) {
 	cache := NewCache().WithMaxSize(10)
 	cache.Set("key", "value")

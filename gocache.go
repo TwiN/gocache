@@ -122,6 +122,19 @@ func (cache *Cache) Get(key string) (interface{}, bool) {
 	return entry.Value, true
 }
 
+// GetAll retrieves multiple entries using the keys passed as parameter
+// All keys are returned in the map, regardless of whether they exist or not,
+// however, entries that do not exist in the cache will return nil, meaning that
+// there is no way of determining whether a key genuinely has the value nil, or
+// whether it doesn't exist in the cache using only this function
+func (cache *Cache) GetAll(keys []string) map[string]interface{} {
+	entries := make(map[string]interface{})
+	for _, key := range keys {
+		entries[key], _ = cache.Get(key)
+	}
+	return entries
+}
+
 // Delete removes a key from the cache
 // Returns false if the key did not exist.
 func (cache *Cache) Delete(key string) bool {
