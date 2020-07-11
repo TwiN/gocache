@@ -68,49 +68,15 @@ func (server *Server) Start() error {
 		func(conn redcon.Conn, cmd redcon.Command) {
 			switch strings.ToUpper(string(cmd.Args[0])) {
 			case "GET":
-				if len(cmd.Args) != 2 {
-					conn.WriteError(fmt.Sprintf("ERR wrong number of arguments for '%s' command", string(cmd.Args[0])))
-					return
-				}
-				val, ok := server.Cache.Get(string(cmd.Args[1]))
-				if !ok {
-					conn.WriteNull()
-				} else {
-					conn.WriteAny(val)
-				}
+				server.get(cmd, conn)
 			case "SET":
-				if len(cmd.Args) != 3 {
-					conn.WriteError(fmt.Sprintf("ERR wrong number of arguments for '%s' command", string(cmd.Args[0])))
-					return
-				}
-				server.Cache.Set(string(cmd.Args[1]), cmd.Args[2])
-				conn.WriteString("OK")
+				server.set(cmd, conn)
 			case "DEL":
-				if len(cmd.Args) < 2 {
-					conn.WriteError(fmt.Sprintf("ERR wrong number of arguments for '%s' command", string(cmd.Args[0])))
-					return
-				}
-				numberOfKeysDeleted := 0
-				for index := range cmd.Args {
-					ok := server.Cache.Delete(string(cmd.Args[index]))
-					if ok {
-						numberOfKeysDeleted++
-					}
-				}
-				conn.WriteInt(numberOfKeysDeleted)
+				server.del(cmd, conn)
 			case "EXISTS":
-				if len(cmd.Args) < 2 {
-					conn.WriteError(fmt.Sprintf("ERR wrong number of arguments for '%s' command", string(cmd.Args[0])))
-					return
-				}
-				numberOfExistingKeys := 0
-				for index := range cmd.Args {
-					_, ok := server.Cache.Get(string(cmd.Args[index]))
-					if ok {
-						numberOfExistingKeys++
-					}
-				}
-				conn.WriteInt(numberOfExistingKeys)
+				server.exists(cmd, conn)
+			case "MGET":
+				server.mget(cmd, conn)
 			case "PING":
 				conn.WriteString("PONG")
 			case "QUIT":
@@ -137,6 +103,86 @@ func (server *Server) Start() error {
 		},
 	)
 	return err
+}
+
+func (server *Server) get(cmd redcon.Command, conn redcon.Conn) {
+	if len(cmd.Args) != 2 {
+		conn.WriteError(fmt.Sprintf("ERR wrong number of arguments for '%s' command", string(cmd.Args[0])))
+		return
+	}
+	val, ok := server.Cache.Get(string(cmd.Args[1]))
+	if !ok {
+		conn.WriteNull()
+	} else {
+		conn.WriteAny(val)
+	}
+}
+
+func (server *Server) set(cmd redcon.Command, conn redcon.Conn) {
+	if len(cmd.Args) != 3 {
+		conn.WriteError(fmt.Sprintf("ERR wrong number of arguments for '%s' command", string(cmd.Args[0])))
+		return
+	}
+	server.Cache.Set(string(cmd.Args[1]), cmd.Args[2])
+	conn.WriteString("OK")
+}
+
+func (server *Server) del(cmd redcon.Command, conn redcon.Conn) {
+	if len(cmd.Args) < 2 {
+		conn.WriteError(fmt.Sprintf("ERR wrong number of arguments for '%s' command", string(cmd.Args[0])))
+		return
+	}
+	numberOfKeysDeleted := 0
+	for index := range cmd.Args {
+		if index == 0 {
+			continue
+		}
+		ok := server.Cache.Delete(string(cmd.Args[index]))
+		if ok {
+			numberOfKeysDeleted++
+		}
+	}
+	conn.WriteInt(numberOfKeysDeleted)
+}
+
+func (server *Server) exists(cmd redcon.Command, conn redcon.Conn) {
+	if len(cmd.Args) < 2 {
+		conn.WriteError(fmt.Sprintf("ERR wrong number of arguments for '%s' command", string(cmd.Args[0])))
+		return
+	}
+	numberOfExistingKeys := 0
+	for index := range cmd.Args {
+		if index == 0 {
+			continue
+		}
+		_, ok := server.Cache.Get(string(cmd.Args[index]))
+		if ok {
+			numberOfExistingKeys++
+		}
+	}
+	conn.WriteInt(numberOfExistingKeys)
+}
+
+func (server *Server) mget(cmd redcon.Command, conn redcon.Conn) {
+	if len(cmd.Args) < 2 {
+		conn.WriteError(fmt.Sprintf("ERR wrong number of arguments for '%s' command", string(cmd.Args[0])))
+		return
+	}
+	var keys []string
+	for index := range cmd.Args {
+		if index == 0 {
+			continue
+		}
+		keys = append(keys, string(cmd.Args[index]))
+	}
+	keyValues := server.Cache.GetAll(keys)
+	if len(keyValues) != len(keys) {
+		conn.WriteError(fmt.Sprintf("ERR internal error, expected %d keys, got %d instead", len(keys), len(keyValues)))
+	}
+	conn.WriteArray(len(keyValues))
+	for _, key := range keys {
+		conn.WriteAny(keyValues[key])
+	}
 }
 
 // autoSave automatically saves every AutoSaveInterval
