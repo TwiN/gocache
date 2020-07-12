@@ -381,6 +381,20 @@ func TestCache_Delete(t *testing.T) {
 	}
 }
 
+func TestCache_DeleteAll(t *testing.T) {
+	cache := NewCache()
+	cache.Set("1", []byte("1"))
+	cache.Set("2", []byte("2"))
+	cache.Set("3", []byte("3"))
+	if len(cache.GetAll([]string{"1", "2", "3"})) != 3 {
+		t.Error("Expected keys 1, 2 and 3 to exist")
+	}
+	numberOfDeletedKeys := cache.DeleteAll([]string{"1", "2", "3"})
+	if numberOfDeletedKeys != 3 {
+		t.Errorf("Expected 3 keys to have been deleted, but only %d were deleted", numberOfDeletedKeys)
+	}
+}
+
 func TestCache_SaveToFile(t *testing.T) {
 	defer os.Remove(TestCacheFile)
 	cache := NewCache()

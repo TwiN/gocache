@@ -148,6 +148,23 @@ func (cache *Cache) Delete(key string) bool {
 	return ok
 }
 
+// DeleteAll deletes multiple entries based on the keys passed as parameter
+// It returns the number of keys deleted
+func (cache *Cache) DeleteAll(keys []string) int {
+	numberOfKeysDeleted := 0
+	cache.mutex.Lock()
+	for _, key := range keys {
+		entry, ok := cache.entries[key]
+		if ok {
+			cache.removeExistingEntry(entry)
+			delete(cache.entries, key)
+			numberOfKeysDeleted++
+		}
+	}
+	cache.mutex.Unlock()
+	return numberOfKeysDeleted
+}
+
 // Count returns the total amount of entries in the cache
 func (cache *Cache) Count() int {
 	cache.mutex.RLock()
