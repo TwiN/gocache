@@ -32,7 +32,7 @@ type Cache struct {
 	tail *Entry
 }
 
-// NewCache creates a new Cachealso
+// NewCache creates a new Cache
 func NewCache() *Cache {
 	return &Cache{
 		MaxSize:        DefaultMaxSize,
