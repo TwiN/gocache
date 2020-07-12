@@ -1,10 +1,12 @@
 package gocacheserver
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/TwinProduction/gocache"
 	"github.com/tidwall/redcon"
 	"log"
+	"os"
 	"strings"
 	"time"
 )
@@ -18,11 +20,13 @@ const (
 type Server struct {
 	Cache *gocache.Cache
 
-	// Port is the port that the server listens on
 	Port int
 
 	AutoSaveInterval time.Duration
 	AutoSaveFile     string
+
+	startTime           time.Time
+	numberOfConnections int
 }
 
 // NewServer creates a new cache server
@@ -63,6 +67,7 @@ func (server *Server) Start() error {
 		}()
 	}
 	address := fmt.Sprintf(":%d", DefaultServerPort)
+	server.startTime = time.Now()
 	log.Printf("Listening on %s", address)
 	err := redcon.ListenAndServe(address,
 		func(conn redcon.Conn, cmd redcon.Command) {
@@ -77,6 +82,8 @@ func (server *Server) Start() error {
 				server.exists(cmd, conn)
 			case "MGET":
 				server.mget(cmd, conn)
+			case "INFO":
+				server.info(cmd, conn)
 			case "PING":
 				conn.WriteString("PONG")
 			case "QUIT":
@@ -93,13 +100,11 @@ func (server *Server) Start() error {
 			}
 		},
 		func(conn redcon.Conn) bool {
-			// use this function to accept or deny the connection.
-			// log.Printf("accept: %s", conn.RemoteAddr())
+			server.numberOfConnections += 1
 			return true
 		},
 		func(conn redcon.Conn, err error) {
-			// this is called when the connection has been closed
-			// log.Printf("closed: %s, err: %v", conn.RemoteAddr(), err)
+			server.numberOfConnections -= 1
 		},
 	)
 	return err
@@ -183,6 +188,38 @@ func (server *Server) mget(cmd redcon.Command, conn redcon.Conn) {
 	for _, key := range keys {
 		conn.WriteAny(keyValues[key])
 	}
+}
+
+func (server *Server) info(cmd redcon.Command, conn redcon.Conn) {
+	if len(cmd.Args) > 2 {
+		conn.WriteError(fmt.Sprintf("ERR wrong number of arguments for '%s' command", string(cmd.Args[0])))
+		return
+	}
+	var section string
+	if len(cmd.Args) == 1 {
+		section = "ALL"
+	} else {
+		section = strings.ToUpper(string(cmd.Args[1]))
+	}
+	buffer := new(bytes.Buffer)
+	if section == "ALL" || section == "SERVER" {
+		buffer.WriteString("# Server\n")
+		buffer.WriteString(fmt.Sprintf("process_id:%d\n", os.Getpid()))
+		buffer.WriteString(fmt.Sprintf("uptime_in_seconds:%d\n", int64(time.Since(server.startTime).Seconds())))
+		buffer.WriteString(fmt.Sprintf("uptime_in_days:%d\n", int64(time.Since(server.startTime).Hours()/24)))
+		buffer.WriteString("\n")
+	}
+	if section == "ALL" || section == "CLIENTS" {
+		buffer.WriteString("# Clients\n")
+		buffer.WriteString(fmt.Sprintf("connected_clients:%d\n", server.numberOfConnections))
+		buffer.WriteString("\n")
+	}
+	if section == "ALL" || section == "REPLICATION" {
+		buffer.WriteString("# Replication\n")
+		buffer.WriteString("role:master\n")
+		buffer.WriteString("\n")
+	}
+	conn.WriteBulkString(fmt.Sprintf("%s\n", strings.TrimSpace(buffer.String())))
 }
 
 // autoSave automatically saves every AutoSaveInterval
