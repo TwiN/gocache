@@ -26,14 +26,20 @@ cache.Set("key", "value")
 ```
 
 ### Getting an entry
+
 ```
 value, ok := cache.Get("key")
 ```
 
+You can also get multiple entries by using `cache.GetAll([]string{"key1", "key2"})`
+
 ### Deleting an entry
+
 ```
 cache.Delete("key")
 ```
+
+You can also delete multiple entries by using `cache.DeleteAll([]string{"key1", "key2"})`
 
 ### Persistence
 
