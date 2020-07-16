@@ -164,11 +164,11 @@ func BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndNoEviction(b *testing.
 
 func BenchmarkCache_GetAndSetConcurrentlyWithRandomKeys(b *testing.B) {
 	testValue := strings.Repeat("a", 256)
-	cache := NewCache().WithMaxSize(10)
+	cache := NewCache().WithEvictionPolicy(LeastRecentlyUsed).WithMaxSize(3)
 
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			k := strconv.Itoa(rand.Intn(b.N))
+			k := strconv.Itoa(rand.Intn(10))
 			cache.Set(k, testValue)
 			_, _ = cache.Get(k)
 		}

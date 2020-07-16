@@ -83,17 +83,16 @@ func (cache *Cache) Set(key string, value interface{}) {
 		// Because we just updated the entry, we need to move it back to HEAD
 		cache.moveExistingEntryToHead(entry)
 	}
-	cache.mutex.Unlock()
 	// If the cache doesn't have a MaxSize, then there's no point checking if we need to evict
 	// an entry, so we'll just return now
 	if cache.MaxSize == NoMaxSize {
+		cache.mutex.Unlock()
 		return
 	}
-	if cache.Count() > cache.MaxSize {
-		cache.mutex.Lock()
+	if len(cache.entries) > cache.MaxSize {
 		cache.evict()
-		cache.mutex.Unlock()
 	}
+	cache.mutex.Unlock()
 }
 
 // Get retrieves an entry using the key passed as parameter
@@ -165,9 +164,9 @@ func (cache *Cache) DeleteAll(keys []string) int {
 
 // Count returns the total amount of entries in the cache
 func (cache *Cache) Count() int {
-	cache.mutex.RLock()
+	cache.mutex.Lock()
 	count := len(cache.entries)
-	cache.mutex.RUnlock()
+	cache.mutex.Unlock()
 	return count
 }
 
