@@ -61,10 +61,8 @@ func (cache *Cache) WithEvictionPolicy(policy EvictionPolicy) *Cache {
 
 // Set creates or updates a key with a given value
 func (cache *Cache) Set(key string, value interface{}) {
-	cache.mutex.RLock()
-	entry, ok := cache.entries[key]
-	cache.mutex.RUnlock()
 	cache.mutex.Lock()
+	entry, ok := cache.entries[key]
 	if !ok {
 		// Cache entry doesn't exist, so we have to create a new one
 		entry = &Entry{

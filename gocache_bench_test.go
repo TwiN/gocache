@@ -149,6 +149,32 @@ func BenchmarkCache_GetAndSetConcurrently(b *testing.B) {
 	})
 }
 
+func BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndNoEviction(b *testing.B) {
+	testValue := strings.Repeat("a", 256)
+	cache := NewCache().WithMaxSize(b.N)
+
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			k := strconv.Itoa(rand.Intn(b.N))
+			cache.Set(k, testValue)
+			_, _ = cache.Get(k)
+		}
+	})
+}
+
+func BenchmarkCache_GetAndSetConcurrentlyWithRandomKeys(b *testing.B) {
+	testValue := strings.Repeat("a", 256)
+	cache := NewCache().WithMaxSize(10)
+
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			k := strconv.Itoa(rand.Intn(b.N))
+			cache.Set(k, testValue)
+			_, _ = cache.Get(k)
+		}
+	})
+}
+
 func BenchmarkCache_GetConcurrently(b *testing.B) {
 	testValue := strings.Repeat("a", 256)
 	cache := NewCache().WithMaxSize(b.N)
