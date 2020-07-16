@@ -164,9 +164,9 @@ func (cache *Cache) DeleteAll(keys []string) int {
 
 // Count returns the total amount of entries in the cache
 func (cache *Cache) Count() int {
-	cache.mutex.Lock()
+	cache.mutex.RLock()
 	count := len(cache.entries)
-	cache.mutex.Unlock()
+	cache.mutex.RUnlock()
 	return count
 }
 
