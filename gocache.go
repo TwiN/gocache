@@ -138,7 +138,7 @@ func (cache *Cache) Delete(key string) bool {
 	cache.mutex.Lock()
 	entry, ok := cache.entries[key]
 	if ok {
-		cache.removeExistingEntry(entry)
+		cache.removeExistingEntryReferences(entry)
 		delete(cache.entries, key)
 	}
 	cache.mutex.Unlock()
@@ -153,7 +153,7 @@ func (cache *Cache) DeleteAll(keys []string) int {
 	for _, key := range keys {
 		entry, ok := cache.entries[key]
 		if ok {
-			cache.removeExistingEntry(entry)
+			cache.removeExistingEntryReferences(entry)
 			delete(cache.entries, key)
 			numberOfKeysDeleted++
 		}
@@ -257,9 +257,10 @@ func (cache *Cache) ReadFromFile(path string) (int, error) {
 	return numberOfEvictions, nil
 }
 
+// moveExistingEntryToHead replaces the current cache head for an existing entry
 func (cache *Cache) moveExistingEntryToHead(entry *Entry) {
 	if !(entry == cache.head && entry == cache.tail) {
-		cache.removeExistingEntry(entry)
+		cache.removeExistingEntryReferences(entry)
 	}
 	if entry != cache.head {
 		entry.previous = cache.head
@@ -269,7 +270,10 @@ func (cache *Cache) moveExistingEntryToHead(entry *Entry) {
 	}
 }
 
-func (cache *Cache) removeExistingEntry(entry *Entry) {
+// removeExistingEntryReferences modifies the next and previous reference of an existing entry and relinks the next and previous
+// entry accordingly, as well as the cache head or/and the cache tail if necessary.
+// Note that it does not remove the entry from the cache, only the references.
+func (cache *Cache) removeExistingEntryReferences(entry *Entry) {
 	if cache.tail == entry {
 		cache.tail = cache.tail.next
 	}
@@ -284,6 +288,7 @@ func (cache *Cache) removeExistingEntry(entry *Entry) {
 	}
 }
 
+// evict removes the tail from the cache
 func (cache *Cache) evict() {
 	if cache.tail == nil || len(cache.entries) == 0 {
 		return
