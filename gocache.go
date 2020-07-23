@@ -270,8 +270,8 @@ func (cache *Cache) moveExistingEntryToHead(entry *Entry) {
 	}
 }
 
-// removeExistingEntryReferences modifies the next and previous reference of an existing entry and relinks the next and previous
-// entry accordingly, as well as the cache head or/and the cache tail if necessary.
+// removeExistingEntryReferences modifies the next and previous reference of an existing entry and re-links
+// the next and previous entry accordingly, as well as the cache head or/and the cache tail if necessary.
 // Note that it does not remove the entry from the cache, only the references.
 func (cache *Cache) removeExistingEntryReferences(entry *Entry) {
 	if cache.tail == entry {
