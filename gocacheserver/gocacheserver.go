@@ -129,7 +129,8 @@ func (server *Server) get(cmd redcon.Command, conn redcon.Conn) {
 }
 
 func (server *Server) set(cmd redcon.Command, conn redcon.Conn) {
-	if len(cmd.Args) != 3 {
+	numberOfArguments := len(cmd.Args)
+	if numberOfArguments != 3 && numberOfArguments != 5 && numberOfArguments != 6 {
 		conn.WriteError(fmt.Sprintf("ERR wrong number of arguments for '%s' command", string(cmd.Args[0])))
 		return
 	}
