@@ -24,6 +24,25 @@ func TestCache_Get(t *testing.T) {
 	}
 }
 
+func TestCache_GetExpired(t *testing.T) {
+	cache := NewCache()
+	cache.SetWithTTL("key", "value", time.Millisecond)
+	time.Sleep(2 * time.Millisecond)
+	_, ok := cache.Get("key")
+	if ok {
+		t.Error("expected key to be expired")
+	}
+}
+
+func TestCache_GetEntryThatHasNotExpiredYet(t *testing.T) {
+	cache := NewCache()
+	cache.SetWithTTL("key", "value", time.Hour)
+	_, ok := cache.Get("key")
+	if !ok {
+		t.Error("expected key to not have expired")
+	}
+}
+
 func TestCache_GetAll(t *testing.T) {
 	cache := NewCache().WithMaxSize(10)
 	cache.Set("key1", "value1")
@@ -392,6 +411,66 @@ func TestCache_DeleteAll(t *testing.T) {
 	numberOfDeletedKeys := cache.DeleteAll([]string{"1", "2", "3"})
 	if numberOfDeletedKeys != 3 {
 		t.Errorf("Expected 3 keys to have been deleted, but only %d were deleted", numberOfDeletedKeys)
+	}
+}
+
+func TestCache_TTL(t *testing.T) {
+	cache := NewCache()
+	ttl, err := cache.TTL("key")
+	if err != ErrKeyDoesNotExist {
+		t.Errorf("expected %s, got %s", ErrKeyDoesNotExist, err)
+	}
+	cache.Set("key", "value")
+	_, err = cache.TTL("key")
+	if err != ErrKeyHasNoExpiration {
+		t.Error("Expected TTL on new key created using Set to have no expiration")
+	}
+	cache.SetWithTTL("key", "value", time.Hour)
+	ttl, err = cache.TTL("key")
+	if err != nil {
+		t.Error("Unexpected error")
+	}
+	if ttl.Minutes() < 59 || ttl.Minutes() > 60 {
+		t.Error("Expected the TTL to be almost an hour")
+	}
+	cache.SetWithTTL("key", "value", 5*time.Millisecond)
+	time.Sleep(6 * time.Millisecond)
+	ttl, err = cache.TTL("key")
+	if err != ErrKeyDoesNotExist {
+		t.Error("key should've expired, thus TTL should've returned ")
+	}
+}
+
+func TestCache_Expire(t *testing.T) {
+	cache := NewCache()
+	if cache.Expire("key-that-does-not-exist", time.Minute) {
+		t.Error("Expected Expire to return false, because the key used did not exist")
+	}
+	cache.Set("key", "value")
+	_, err := cache.TTL("key")
+	if err != ErrKeyHasNoExpiration {
+		t.Error("Expected TTL on new key created using Set to have no expiration")
+	}
+	if !cache.Expire("key", time.Hour) {
+		t.Error("Expected Expire to return true")
+	}
+	ttl, err := cache.TTL("key")
+	if err != nil {
+		t.Error("Unexpected error")
+	}
+	if ttl.Minutes() < 59 || ttl.Minutes() > 60 {
+		t.Error("Expected the TTL to be almost an hour")
+	}
+	if !cache.Expire("key", 5*time.Millisecond) {
+		t.Error("Expected Expire to return true")
+	}
+	time.Sleep(6 * time.Millisecond)
+	_, err = cache.TTL("key")
+	if err != ErrKeyDoesNotExist {
+		t.Error("key should've expired, thus TTL should've returned ")
+	}
+	if cache.Expire("key", time.Hour) {
+		t.Error("Expire should've returned false, because the key should've already expired, thus no longer exist")
 	}
 }
 

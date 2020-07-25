@@ -3,6 +3,7 @@ package gocache
 import (
 	"bufio"
 	"encoding/gob"
+	"errors"
 	"os"
 	"sort"
 	"sync"
@@ -16,6 +17,13 @@ const (
 
 	// DefaultMaxSize is the max size set if no max size is specified
 	DefaultMaxSize = 1000
+
+	NoExpiration = -1
+)
+
+var (
+	ErrKeyDoesNotExist    = errors.New("key does not exist")
+	ErrKeyHasNoExpiration = errors.New("key has no expiration")
 )
 
 type Cache struct {
@@ -61,9 +69,20 @@ func (cache *Cache) WithEvictionPolicy(policy EvictionPolicy) *Cache {
 
 // Set creates or updates a key with a given value
 func (cache *Cache) Set(key string, value interface{}) {
+	cache.SetWithTTL(key, value, NoExpiration)
+}
+
+// SetWithTTL creates or updates a key with a given value and sets an expiration time (-1 is no expiration)
+func (cache *Cache) SetWithTTL(key string, value interface{}, ttl time.Duration) {
 	cache.mutex.Lock()
 	entry, ok := cache.entries[key]
 	if !ok {
+		// A negative TTL that isn't -1 (NoExpiration) is an entry that will expire instantly,
+		// so might as well just not create it in the first place    XXX: is this even necessary?
+		if ttl != NoExpiration && ttl < 0 {
+			cache.mutex.Unlock()
+			return
+		}
 		// Cache entry doesn't exist, so we have to create a new one
 		entry = &Entry{
 			Key:               key,
@@ -82,6 +101,11 @@ func (cache *Cache) Set(key string, value interface{}) {
 		entry.Value = value
 		// Because we just updated the entry, we need to move it back to HEAD
 		cache.moveExistingEntryToHead(entry)
+	}
+	if ttl != NoExpiration {
+		entry.Expiration = time.Now().Add(ttl).UnixNano()
+	} else {
+		entry.Expiration = NoExpiration
 	}
 	// If the cache doesn't have a MaxSize, then there's no point checking if we need to evict
 	// an entry, so we'll just return now
@@ -102,7 +126,7 @@ func (cache *Cache) Get(key string) (interface{}, bool) {
 	cache.mutex.RLock()
 	entry, ok := cache.entries[key]
 	cache.mutex.RUnlock()
-	if !ok {
+	if !ok || entry.Expired() {
 		return nil, false
 	}
 	if cache.EvictionPolicy == LeastRecentlyUsed {
@@ -146,7 +170,8 @@ func (cache *Cache) Delete(key string) bool {
 }
 
 // DeleteAll deletes multiple entries based on the keys passed as parameter
-// It returns the number of keys deleted
+//
+// Returns the number of keys deleted
 func (cache *Cache) DeleteAll(keys []string) int {
 	numberOfKeysDeleted := 0
 	cache.mutex.Lock()
@@ -162,7 +187,7 @@ func (cache *Cache) DeleteAll(keys []string) int {
 	return numberOfKeysDeleted
 }
 
-// Count returns the total amount of entries in the cache
+// Count returns the total amount of entries in the cache, regardless of whether they're expired or not
 func (cache *Cache) Count() int {
 	cache.mutex.RLock()
 	count := len(cache.entries)
@@ -177,6 +202,52 @@ func (cache *Cache) Clear() {
 	cache.head = nil
 	cache.tail = nil
 	cache.mutex.Unlock()
+}
+
+// TTL returns the time until the cache entry specified by the key passed as parameter
+// will be deleted.
+//
+// Returns -1 if the key has no expiration
+// Returns -2 if the key does not exist
+func (cache *Cache) TTL(key string) (time.Duration, error) {
+	cache.mutex.RLock()
+	entry, ok := cache.entries[key]
+	cache.mutex.RUnlock()
+	if !ok {
+		return 0, ErrKeyDoesNotExist
+	}
+	if entry.Expiration == NoExpiration {
+		return 0, ErrKeyHasNoExpiration
+	}
+	timeUntilExpiration := time.Until(time.Unix(0, entry.Expiration))
+	if timeUntilExpiration < 0 {
+		// The key has already expired but hasn't been deleted yet.
+		// From the client's perspective, this means that the cache entry doesn't exist
+		return 0, ErrKeyDoesNotExist
+	}
+	return timeUntilExpiration, nil
+}
+
+// Expire sets a key's expiration time
+//
+// A ttl of -1 means that the key will never expire
+// A ttl of 0 means that the key will expire immediately
+// If using LRU, note that this does not reset the position of the key
+//
+// Returns true if the cache key exists and has had its expiration time altered
+func (cache *Cache) Expire(key string, ttl time.Duration) bool {
+	cache.mutex.RLock()
+	entry, ok := cache.entries[key]
+	cache.mutex.RUnlock()
+	if !ok || entry.Expired() {
+		return false
+	}
+	if ttl != NoExpiration {
+		entry.Expiration = time.Now().Add(ttl).UnixNano()
+	} else {
+		entry.Expiration = NoExpiration
+	}
+	return true
 }
 
 // SaveToFile stores the content of the cache to a file so that it can be read using
