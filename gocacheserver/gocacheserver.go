@@ -7,6 +7,7 @@ import (
 	"github.com/tidwall/redcon"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -82,6 +83,10 @@ func (server *Server) Start() error {
 				server.exists(cmd, conn)
 			case "MGET":
 				server.mget(cmd, conn)
+			case "TTL":
+				server.ttl(cmd, conn)
+			case "EXPIRE":
+				server.expire(cmd, conn)
 			case "INFO":
 				server.info(cmd, conn)
 			case "PING":
@@ -128,7 +133,24 @@ func (server *Server) set(cmd redcon.Command, conn redcon.Conn) {
 		conn.WriteError(fmt.Sprintf("ERR wrong number of arguments for '%s' command", string(cmd.Args[0])))
 		return
 	}
-	server.Cache.Set(string(cmd.Args[1]), cmd.Args[2])
+	if numberOfArguments == 3 {
+		server.Cache.Set(string(cmd.Args[1]), cmd.Args[2])
+	} else {
+		unit, err := strconv.Atoi(string(cmd.Args[4]))
+		if err != nil {
+			conn.WriteError("ERR value is not an integer or out of range")
+			return
+		}
+		option := strings.ToUpper(string(cmd.Args[3]))
+		if option == "EX" {
+			server.Cache.SetWithTTL(string(cmd.Args[1]), cmd.Args[2], time.Duration(unit)*time.Second)
+		} else if option == "PX" {
+			server.Cache.SetWithTTL(string(cmd.Args[1]), cmd.Args[2], time.Duration(unit)*time.Millisecond)
+		} else {
+			conn.WriteError("ERR syntax error")
+			return
+		}
+	}
 	conn.WriteString("OK")
 }
 
@@ -187,6 +209,44 @@ func (server *Server) mget(cmd redcon.Command, conn redcon.Conn) {
 	conn.WriteArray(len(keyValues))
 	for _, key := range keys {
 		conn.WriteAny(keyValues[key])
+	}
+}
+
+func (server *Server) ttl(cmd redcon.Command, conn redcon.Conn) {
+	if len(cmd.Args) != 2 {
+		conn.WriteError(fmt.Sprintf("ERR wrong number of arguments for '%s' command", string(cmd.Args[0])))
+		return
+	}
+	ttl, err := server.Cache.TTL(string(cmd.Args[1]))
+	if err != nil {
+		if err == gocache.ErrKeyDoesNotExist {
+			conn.WriteInt(-2)
+		} else if err == gocache.ErrKeyHasNoExpiration {
+			conn.WriteInt(-1)
+		} else {
+			conn.WriteError(fmt.Sprintf("ERR %s", err.Error()))
+		}
+		return
+	}
+	conn.WriteInt(int(ttl.Seconds()))
+}
+
+func (server *Server) expire(cmd redcon.Command, conn redcon.Conn) {
+	if len(cmd.Args) != 3 {
+		conn.WriteError(fmt.Sprintf("ERR wrong number of arguments for '%s' command", string(cmd.Args[0])))
+		return
+	}
+	key := string(cmd.Args[1])
+	seconds, err := strconv.Atoi(string(cmd.Args[2]))
+	if err != nil {
+		conn.WriteError("ERR value is not an integer or out of range")
+		return
+	}
+	updatedSuccessfully := server.Cache.Expire(key, time.Second*time.Duration(seconds))
+	if updatedSuccessfully {
+		conn.WriteInt(1)
+	} else {
+		conn.WriteInt(0)
 	}
 }
 
