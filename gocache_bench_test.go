@@ -149,7 +149,7 @@ func BenchmarkCache_GetAndSetConcurrently(b *testing.B) {
 	})
 }
 
-func BenchmarkCache_GetAndSetConcurrentlyWithRandomKeys(b *testing.B) {
+func BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndLRU(b *testing.B) {
 	testValue := strings.Repeat("a", 256)
 	cache := NewCache().WithEvictionPolicy(LeastRecentlyUsed).WithMaxSize(1000)
 
@@ -162,9 +162,9 @@ func BenchmarkCache_GetAndSetConcurrentlyWithRandomKeys(b *testing.B) {
 	})
 }
 
-func BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndNoEviction(b *testing.B) {
+func BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndFIFO(b *testing.B) {
 	testValue := strings.Repeat("a", 256)
-	cache := NewCache().WithMaxSize(b.N)
+	cache := NewCache().WithEvictionPolicy(FirstInFirstOut).WithMaxSize(1000)
 
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -175,7 +175,33 @@ func BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndNoEviction(b *testing.
 	})
 }
 
-func BenchmarkCache_GetAndSetConcurrentlyWithFrequentEvictions(b *testing.B) {
+func BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndNoEvictionAndLRU(b *testing.B) {
+	testValue := strings.Repeat("a", 256)
+	cache := NewCache().WithEvictionPolicy(LeastRecentlyUsed).WithMaxSize(b.N)
+
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			k := strconv.Itoa(rand.Intn(b.N))
+			cache.Set(k, testValue)
+			_, _ = cache.Get(k)
+		}
+	})
+}
+
+func BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndNoEvictionAndFIFO(b *testing.B) {
+	testValue := strings.Repeat("a", 256)
+	cache := NewCache().WithEvictionPolicy(FirstInFirstOut).WithMaxSize(b.N)
+
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			k := strconv.Itoa(rand.Intn(b.N))
+			cache.Set(k, testValue)
+			_, _ = cache.Get(k)
+		}
+	})
+}
+
+func BenchmarkCache_GetAndSetConcurrentlyWithFrequentEvictionsAndLRU(b *testing.B) {
 	testValue := strings.Repeat("a", 256)
 	cache := NewCache().WithEvictionPolicy(LeastRecentlyUsed).WithMaxSize(3)
 
@@ -188,7 +214,41 @@ func BenchmarkCache_GetAndSetConcurrentlyWithFrequentEvictions(b *testing.B) {
 	})
 }
 
-func BenchmarkCache_GetConcurrently(b *testing.B) {
+func BenchmarkCache_GetAndSetConcurrentlyWithFrequentEvictionsAndFIFO(b *testing.B) {
+	testValue := strings.Repeat("a", 256)
+	cache := NewCache().WithEvictionPolicy(LeastRecentlyUsed).WithMaxSize(3)
+
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			k := strconv.Itoa(rand.Intn(15))
+			cache.Set(k, testValue)
+			_, _ = cache.Get(k)
+		}
+	})
+}
+
+func BenchmarkCache_GetConcurrentlyWithLRU(b *testing.B) {
+	testValue := strings.Repeat("a", 256)
+	cache := NewCache().WithMaxSize(b.N)
+	for i := 0; i < b.N; i++ {
+		cache.Set(strconv.Itoa(i), testValue)
+	}
+
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			key := strconv.Itoa(rand.Intn(b.N))
+			val, ok := cache.Get(key)
+			if !ok {
+				b.Errorf("key: %v; value: %v", key, val)
+			}
+			if val != testValue {
+				b.Errorf("expected: %v; got: %v", val, testValue)
+			}
+		}
+	})
+}
+
+func BenchmarkCache_GetConcurrentlyWithFIFO(b *testing.B) {
 	testValue := strings.Repeat("a", 256)
 	cache := NewCache().WithMaxSize(b.N)
 	for i := 0; i < b.N; i++ {
