@@ -66,7 +66,7 @@ func (server *Server) Start() error {
 			log.Printf("Saved successfully in %s", time.Since(start))
 		}()
 	}
-	address := fmt.Sprintf(":%d", DefaultServerPort)
+	address := fmt.Sprintf(":%d", server.Port)
 	server.startTime = time.Now()
 	log.Printf("Listening on %s", address)
 	err := redcon.ListenAndServe(address,
