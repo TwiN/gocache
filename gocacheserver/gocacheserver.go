@@ -87,6 +87,8 @@ func (server *Server) Start() error {
 				server.ttl(cmd, conn)
 			case "EXPIRE":
 				server.expire(cmd, conn)
+			case "FLUSHDB":
+				server.flushDb(cmd, conn)
 			case "INFO":
 				server.info(cmd, conn)
 			case "PING":
@@ -281,6 +283,11 @@ func (server *Server) info(cmd redcon.Command, conn redcon.Conn) {
 		buffer.WriteString("\n")
 	}
 	conn.WriteBulkString(fmt.Sprintf("%s\n", strings.TrimSpace(buffer.String())))
+}
+
+func (server *Server) flushDb(_ redcon.Command, conn redcon.Conn) {
+	server.Cache.Clear()
+	conn.WriteString("OK")
 }
 
 // autoSave automatically saves every AutoSaveInterval
