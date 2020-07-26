@@ -87,6 +87,8 @@ func (server *Server) Start() error {
 				server.ttl(cmd, conn)
 			case "EXPIRE":
 				server.expire(cmd, conn)
+			case "SETEX":
+				server.setex(cmd, conn)
 			case "FLUSHDB":
 				server.flushDb(cmd, conn)
 			case "INFO":
@@ -154,6 +156,20 @@ func (server *Server) set(cmd redcon.Command, conn redcon.Conn) {
 			return
 		}
 	}
+	conn.WriteString("OK")
+}
+
+func (server *Server) setex(cmd redcon.Command, conn redcon.Conn) {
+	if len(cmd.Args) != 4 {
+		conn.WriteError(fmt.Sprintf("ERR wrong number of arguments for '%s' command", string(cmd.Args[0])))
+		return
+	}
+	unit, err := strconv.Atoi(string(cmd.Args[2]))
+	if err != nil {
+		conn.WriteError("ERR value is not an integer or out of range")
+		return
+	}
+	server.Cache.SetWithTTL(string(cmd.Args[1]), cmd.Args[3], time.Duration(unit)*time.Second)
 	conn.WriteString("OK")
 }
 
