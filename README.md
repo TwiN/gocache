@@ -179,3 +179,9 @@ SET: 1226763.12 requests per second
 GET: 1551812.75 requests per second
 ```
 
+
+## Running server with Docker
+
+See the Makefile's `docker-build` and `docker-run` steps.
+
+Note that the server version of gocache is still under development. 
