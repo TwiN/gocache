@@ -489,8 +489,10 @@ func (cache *Cache) evict() {
 	}
 	if cache.tail != nil {
 		delete(cache.entries, cache.tail.Key)
-		cache.tail = cache.tail.next
-		cache.tail.previous = nil
+		newTail := cache.tail.next
+		newTail.previous = nil
+		cache.tail.next = nil
+		cache.tail = newTail
 		cache.Stats.EvictedKeys++
 	}
 }
