@@ -94,8 +94,13 @@ Any Redis client should be able to interact with the server, though only the fol
 - [X] DEL
 - [X] PING
 - [X] QUIT
-- [ ] INFO
+- [X] INFO
+- [X] EXPIRE
+- [X] SETEX
+- [X] TTL
+- [X] FLUSHDB
 - [ ] KEYS
+- [ ] SCAN
 - [X] EXISTS
 - [X] ECHO
 

@@ -57,15 +57,9 @@ func (server *Server) WithPort(port int) *Server {
 func (server *Server) Start() error {
 	if server.AutoSaveInterval != 0 {
 		go server.autoSave()
-		defer func() {
-			log.Printf("Saving to %s before closing...", server.AutoSaveFile)
-			start := time.Now()
-			err := server.Cache.SaveToFile(server.AutoSaveFile)
-			if err != nil {
-				log.Printf("error while autosaving: %s", err.Error())
-			}
-			log.Printf("Saved successfully in %s", time.Since(start))
-		}()
+	}
+	if err := server.Cache.StartJanitor(); err != nil {
+		panic(err)
 	}
 	address := fmt.Sprintf(":%d", server.Port)
 	server.startTime = time.Now()
@@ -116,6 +110,16 @@ func (server *Server) Start() error {
 			server.numberOfConnections -= 1
 		},
 	)
+	server.Cache.StopJanitor()
+	if server.AutoSaveInterval != 0 {
+		log.Printf("Saving to %s before closing...", server.AutoSaveFile)
+		start := time.Now()
+		err := server.Cache.SaveToFile(server.AutoSaveFile)
+		if err != nil {
+			log.Printf("error while autosaving: %s", err.Error())
+		}
+		log.Printf("Saved successfully in %s", time.Since(start))
+	}
 	return err
 }
 
@@ -291,6 +295,12 @@ func (server *Server) info(cmd redcon.Command, conn redcon.Conn) {
 	if section == "ALL" || section == "CLIENTS" {
 		buffer.WriteString("# Clients\n")
 		buffer.WriteString(fmt.Sprintf("connected_clients:%d\n", server.numberOfConnections))
+		buffer.WriteString("\n")
+	}
+	if section == "ALL" || section == "STATS" {
+		buffer.WriteString("# Stats\n")
+		buffer.WriteString(fmt.Sprintf("evicted_keys:%d\n", server.Cache.Stats.EvictedKeys))
+		buffer.WriteString(fmt.Sprintf("expired_keys:%d\n", server.Cache.Stats.ExpiredKeys))
 		buffer.WriteString("\n")
 	}
 	if section == "ALL" || section == "REPLICATION" {

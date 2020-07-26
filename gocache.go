@@ -18,12 +18,34 @@ const (
 	// DefaultMaxSize is the max size set if no max size is specified
 	DefaultMaxSize = 1000
 
+	// NoExpiration is the value that must be used as TTL to specify that the given key should never expire
 	NoExpiration = -1
+
+	// JanitorMaxExpiredChannelSize is the maximum size of the janitor's expire channel
+	// If the janitor's channel reaches that size, key access will no longer trigger active suppression.
+	JanitorMaxExpiredChannelSize = 100
+
+	// JanitorPassiveCleanupDutyShiftTarget is the target number of expired keys to find during passive clean up duty
+	// before pausing the passive expired keys eviction process to flush the expired keys found
+	// Must be less than JanitorMaxExpiredChannelSize
+	JanitorPassiveCleanupDutyShiftTarget = JanitorMaxExpiredChannelSize / 4
+
+	// JanitorMaxPassiveCleanUpStepsPerShift is the maximum number of nodes to traverse before pausing
+	JanitorMaxPassiveCleanUpStepsPerShift = JanitorMaxExpiredChannelSize * 10
+
+	// JanitorMinPassiveCleanupDutyBackOff is the minimum interval between each iteration of steps
+	// defined by JanitorMaxPassiveCleanUpStepsPerShift
+	JanitorMinPassiveCleanupDutyBackOff = time.Millisecond * 50
+
+	// JanitorMaxPassiveCleanupDutyBackOff is the maximum interval between each iteration of steps
+	// defined by JanitorMaxPassiveCleanUpStepsPerShift
+	JanitorMaxPassiveCleanupDutyBackOff = time.Second * 3
 )
 
 var (
-	ErrKeyDoesNotExist    = errors.New("key does not exist")
-	ErrKeyHasNoExpiration = errors.New("key has no expiration")
+	ErrKeyDoesNotExist       = errors.New("key does not exist")
+	ErrKeyHasNoExpiration    = errors.New("key has no expiration")
+	ErrJanitorAlreadyRunning = errors.New("janitor is already running")
 )
 
 type Cache struct {
@@ -33,20 +55,31 @@ type Cache struct {
 	// EvictionPolicy is the eviction policy
 	EvictionPolicy EvictionPolicy
 
+	Stats *Statistics
+
 	entries map[string]*Entry
 	mutex   sync.RWMutex
 
 	head *Entry
 	tail *Entry
+
+	// janitorStopChan is the channel used to stop the janitor
+	janitorStopChan chan bool
+
+	// janitorExpireChan is a channel for expired keys that needs to be deleted
+	janitorExpireChan chan string
 }
 
 // NewCache creates a new Cache
 func NewCache() *Cache {
 	return &Cache{
-		MaxSize:        DefaultMaxSize,
-		EvictionPolicy: FirstInFirstOut,
-		entries:        make(map[string]*Entry),
-		mutex:          sync.RWMutex{},
+		MaxSize:           DefaultMaxSize,
+		EvictionPolicy:    FirstInFirstOut,
+		Stats:             &Statistics{},
+		entries:           make(map[string]*Entry),
+		mutex:             sync.RWMutex{},
+		janitorStopChan:   nil,
+		janitorExpireChan: nil,
 	}
 }
 
@@ -65,6 +98,82 @@ func (cache *Cache) WithMaxSize(maxSize int) *Cache {
 func (cache *Cache) WithEvictionPolicy(policy EvictionPolicy) *Cache {
 	cache.EvictionPolicy = policy
 	return cache
+}
+
+func (cache *Cache) StartJanitor() error {
+	if cache.janitorStopChan != nil {
+		return ErrJanitorAlreadyRunning
+	}
+	//log.Println("[gocache] Starting Janitor")
+	cache.janitorStopChan = make(chan bool)
+	cache.janitorExpireChan = make(chan string, JanitorMaxExpiredChannelSize)
+	go func() {
+		// rather than starting from the tail on every passive run, we can try to start from the last next entry
+		var lastTraversedNode *Entry
+		totalNumberOfExpiredKeysInPreviousRunFromTailToHead := 0
+		passiveCleanupDutyBackOff := JanitorMinPassiveCleanupDutyBackOff
+		for {
+			select {
+			case expiredKey := <-cache.janitorExpireChan:
+				cache.Delete(expiredKey)
+				cache.Stats.ExpiredKeys++
+			case <-time.After(passiveCleanupDutyBackOff):
+				// Passive clean up duty
+				if cache.tail != nil {
+					//start := time.Now()
+					steps := 0
+					expiredEntriesFound := 0
+					current := cache.tail
+					if lastTraversedNode != nil {
+						// Make sure the lastTraversedNode is still in the cache, otherwise we'd be traversing nodes that were already deleted
+						_, isInCache := cache.get(lastTraversedNode.Key)
+						if isInCache {
+							current = lastTraversedNode
+						}
+					}
+					if current == cache.tail {
+						//log.Printf("There are currently %d entries in the cache. The last walk resulted in finding %d expired keys", cache.Count(), totalNumberOfExpiredKeysInPreviousRunFromTailToHead)
+						totalNumberOfExpiredKeysInPreviousRunFromTailToHead = 0
+					}
+					for current != nil {
+						steps++
+						if current.Expired() {
+							expiredEntriesFound++
+							cache.janitorExpireChan <- current.Key
+						}
+						current = current.next
+						lastTraversedNode = current
+						if steps == JanitorMaxPassiveCleanUpStepsPerShift || len(cache.janitorExpireChan) >= JanitorPassiveCleanupDutyShiftTarget {
+							break
+						}
+						// XXX: maybe the backoff should be here? to reduce cpu usage
+					}
+					//log.Printf("traversed %d nodes and found %d expired entries in %s before stopping\n", steps, expiredEntriesFound, time.Since(start))
+					totalNumberOfExpiredKeysInPreviousRunFromTailToHead += expiredEntriesFound
+					if expiredEntriesFound >= 1 {
+						passiveCleanupDutyBackOff = JanitorMinPassiveCleanupDutyBackOff
+					} else {
+						if passiveCleanupDutyBackOff*2 < JanitorMaxPassiveCleanupDutyBackOff {
+							passiveCleanupDutyBackOff *= 2
+						} else {
+							passiveCleanupDutyBackOff = JanitorMaxPassiveCleanupDutyBackOff
+						}
+					}
+				}
+			case <-cache.janitorStopChan:
+				//log.Println("[gocache] Stopping Janitor")
+				cache.janitorStopChan = nil
+				cache.janitorExpireChan = nil
+				return
+			}
+		}
+	}()
+	return nil
+}
+
+func (cache *Cache) StopJanitor() {
+	cache.janitorStopChan <- true
+	time.Sleep(100 * time.Millisecond)
 }
 
 // Set creates or updates a key with a given value
@@ -123,10 +232,19 @@ func (cache *Cache) SetWithTTL(key string, value interface{}, ttl time.Duration)
 // If there is no such entry, the value returned will be nil and the boolean will be false
 // If there is an entry, the value returned will be the value cached and the boolean will be true
 func (cache *Cache) Get(key string) (interface{}, bool) {
-	cache.mutex.RLock()
-	entry, ok := cache.entries[key]
-	cache.mutex.RUnlock()
-	if !ok || entry.Expired() {
+	entry, ok := cache.get(key)
+	if !ok {
+		return nil, false
+	}
+	if entry.Expired() {
+		if cache.janitorExpireChan != nil {
+			if len(cache.janitorExpireChan) < JanitorMaxExpiredChannelSize {
+				cache.janitorExpireChan <- key
+			}
+		} else {
+			// If janitorExpireChan is nil, then there's no janitor, so we have to expire synchronously
+			cache.Delete(key)
+		}
 		return nil, false
 	}
 	if cache.EvictionPolicy == LeastRecentlyUsed {
@@ -164,6 +282,9 @@ func (cache *Cache) Delete(key string) bool {
 	if ok {
 		cache.removeExistingEntryReferences(entry)
 		delete(cache.entries, key)
+		// To prevent the janitor from traversing old nodes ;)
+		entry.previous = nil
+		entry.next = nil
 	}
 	cache.mutex.Unlock()
 	return ok
@@ -206,13 +327,8 @@ func (cache *Cache) Clear() {
 
 // TTL returns the time until the cache entry specified by the key passed as parameter
 // will be deleted.
-//
-// Returns -1 if the key has no expiration
-// Returns -2 if the key does not exist
 func (cache *Cache) TTL(key string) (time.Duration, error) {
-	cache.mutex.RLock()
-	entry, ok := cache.entries[key]
-	cache.mutex.RUnlock()
+	entry, ok := cache.get(key)
 	if !ok {
 		return 0, ErrKeyDoesNotExist
 	}
@@ -236,9 +352,7 @@ func (cache *Cache) TTL(key string) (time.Duration, error) {
 //
 // Returns true if the cache key exists and has had its expiration time altered
 func (cache *Cache) Expire(key string, ttl time.Duration) bool {
-	cache.mutex.RLock()
-	entry, ok := cache.entries[key]
-	cache.mutex.RUnlock()
+	entry, ok := cache.get(key)
 	if !ok || entry.Expired() {
 		return false
 	}
@@ -328,6 +442,15 @@ func (cache *Cache) ReadFromFile(path string) (int, error) {
 	return numberOfEvictions, nil
 }
 
+// get retrieves an entry using the key passed as parameter, but unlike Get, it doesn't update the access time or
+// move the position of the entry to the head
+func (cache *Cache) get(key string) (*Entry, bool) {
+	cache.mutex.RLock()
+	entry, ok := cache.entries[key]
+	cache.mutex.RUnlock()
+	return entry, ok
+}
+
 // moveExistingEntryToHead replaces the current cache head for an existing entry
 func (cache *Cache) moveExistingEntryToHead(entry *Entry) {
 	if !(entry == cache.head && entry == cache.tail) {
@@ -368,5 +491,6 @@ func (cache *Cache) evict() {
 		delete(cache.entries, cache.tail.Key)
 		cache.tail = cache.tail.next
 		cache.tail.previous = nil
+		cache.Stats.EvictedKeys++
 	}
 }
