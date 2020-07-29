@@ -122,6 +122,30 @@ func TestCache_EvictionsWithLRU(t *testing.T) {
 	}
 }
 
+func TestCache_HeadToTailSimple(t *testing.T) {
+	cache := NewCache().WithMaxSize(3)
+	cache.Set("1", "1")
+	if cache.tail.Key != "1" && cache.head.Key != "1" {
+		t.Error("expected tail=1 and head=1")
+	}
+	cache.Set("2", "2")
+	if cache.tail.Key != "1" && cache.head.Key != "2" {
+		t.Error("expected tail=1 and head=2")
+	}
+	cache.Set("3", "3")
+	if cache.tail.Key != "1" && cache.head.Key != "3" {
+		t.Error("expected tail=1 and head=4")
+	}
+	cache.Set("4", "4")
+	if cache.tail.Key != "2" && cache.head.Key != "4" {
+		t.Error("expected tail=2 and head=4")
+	}
+	cache.Set("5", "5")
+	if cache.tail.Key != "3" && cache.head.Key != "5" {
+		t.Error("expected tail=3 and head=5")
+	}
+}
+
 func TestCache_HeadTailWorksWithFIFO(t *testing.T) {
 	cache := NewCache().WithMaxSize(3).WithEvictionPolicy(FirstInFirstOut)
 
@@ -344,6 +368,26 @@ func TestCache_HeadTailWorksWithLRU(t *testing.T) {
 	}
 }
 
+func TestCache_HeadStaysTheSameIfCallRepeatedly(t *testing.T) {
+	cache := NewCache().WithEvictionPolicy(LeastRecentlyUsed).WithMaxSize(10)
+	cache.Set("1", "1")
+	if cache.tail.Key != "1" && cache.head.Key != "1" {
+		t.Error("expected tail=1 and head=1")
+	}
+	cache.Set("1", "1")
+	if cache.tail.Key != "1" && cache.head.Key != "1" {
+		t.Error("expected tail=1 and head=1")
+	}
+	cache.Get("1")
+	if cache.tail.Key != "1" && cache.head.Key != "1" {
+		t.Error("expected tail=1 and head=1")
+	}
+	cache.Get("1")
+	if cache.tail.Key != "1" && cache.head.Key != "1" {
+		t.Error("expected tail=1 and head=1")
+	}
+}
+
 func TestCache_Delete(t *testing.T) {
 	cache := NewCache()
 
@@ -548,4 +592,21 @@ func TestCache_ReadFromFile(t *testing.T) {
 	newCache.evict()
 	// Make sure we can create new entries
 	newCache.Set("eviction-test", 1)
+}
+
+func TestCache_StartJanitor(t *testing.T) {
+	cache := NewCache()
+	cache.SetWithTTL("1", "1", time.Nanosecond)
+	if cacheSize := cache.Count(); cacheSize != 1 {
+		t.Errorf("expected cacheSize to be 1, but was %d", cacheSize)
+	}
+	err := cache.StartJanitor()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cache.StopJanitor()
+	time.Sleep(JanitorMinShiftBackOff * 2)
+	if cacheSize := cache.Count(); cacheSize != 0 {
+		t.Errorf("expected cacheSize to be 0, but was %d", cacheSize)
+	}
 }
