@@ -9,6 +9,11 @@ It supports the following cache eviction policies:
 - First in first out (FIFO)
 - Least recently used (LRU)
 
+It also supports cache entry TTL, which is both active and passive. Active expiration means that if you attempt 
+to retrieve a cache key that has already expired, it will delete it on the spot and the behavior will be as if
+the cache key didn't exist. As for passive expiration, there's a background task that will take care of deleting
+expired keys.
+
 
 ## Usage
 ```
@@ -103,81 +108,6 @@ Any Redis client should be able to interact with the server, though only the fol
 - [ ] SCAN
 - [X] EXISTS
 - [X] ECHO
-
-
-## Performance
-
-Using the following command:
-```
-redis-benchmark -p 6379 -t set,get -n 10000000 -r 100000 -q -P 512 -c 512
-```
-
-In English, the command above will send 10M requests using 100k unique keys concurrently across 512 clients.
-On top of that, each client pipelines 512 requests.
-
-On a machine with the following specs:
-```
-Arch Linux
-x86_64 Linux 5.7.7-arch1-1
-i7-8550U 8x 4GHz
-16G RAM
-Go 1.14.4
-```
-
-### Gocache
-
-#### Without eviction
-
-With the following configuration:
-```golang
-cache := gocache.NewCache().WithEvictionPolicy(gocache.LeastRecentlyUsed).WithMaxSize(gocache.NoMaxSize)
-server := gocacheserver.NewServer(cache)
-server.Start()
-```
-
-Single-threaded (`GOMAXPROCS=1 go run examples/server/server.go`):
-```
-SET: 791545.38 requests per second
-GET: 711264.81 requests per second
-```
-
-Multi-threaded (`go run examples/server/server.go`):
-```
-SET: 1240345.25 requests per second
-GET: 1103784.00 requests per second
-```
-
-#### With eviction
-
-With the following configuration:
-```
-cache := gocache.NewCache().WithEvictionPolicy(gocache.LeastRecentlyUsed).WithMaxSize(10000)
-server := gocacheserver.NewServer(cache)
-server.Start()
-```
-
-Single-threaded (`GOMAXPROCS=1 go run examples/server/server.go`):
-```
-SET: 1311353.75 requests per second
-GET: 2296299.50 requests per second
-```
-
-Multi-threaded (`go run examples/server/server.go`):
-```
-SET: 1115123.38 requests per second
-GET: 2413930.25 requests per second
-```
-
-
-### Redis 6
-
-Using the default configuration with `redis-server`.
-
-Multi-threaded, (`redis-server`, version 6.0.5)
-```
-SET: 1226763.12 requests per second
-GET: 1551812.75 requests per second
-```
 
 
 ## Running server with Docker
