@@ -12,7 +12,7 @@ func main() {
 	if port == 0 {
 		port = gocacheserver.DefaultServerPort
 	}
-	cache := gocache.NewCache().WithEvictionPolicy(gocache.LeastRecentlyUsed).WithMaxSize(10000)
+	cache := gocache.NewCache().WithEvictionPolicy(gocache.LeastRecentlyUsed).WithMaxSize(100000)
 	server := gocacheserver.NewServer(cache).WithPort(port)
 	server.Start()
 }

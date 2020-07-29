@@ -22,7 +22,7 @@ func (entry *Entry) Accessed() {
 	entry.RelevantTimestamp = time.Now()
 }
 
-func (entry *Entry) Expired() bool {
+func (entry Entry) Expired() bool {
 	if entry.Expiration > 0 {
 		if time.Now().UnixNano() > entry.Expiration {
 			return true
