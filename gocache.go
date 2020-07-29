@@ -2,7 +2,6 @@ package gocache
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"runtime"
 	"sync"
@@ -10,6 +9,8 @@ import (
 )
 
 const (
+	Debug = false
+
 	// NoMaxSize means that the cache has no maximum number of entries in the cache
 	// Setting MaxSize to this value also means there will be no eviction
 	NoMaxSize = 0
@@ -107,7 +108,7 @@ func (cache *Cache) StartJanitor() error {
 				// Passive clean up duty
 				cache.mutex.Lock()
 				if cache.tail != nil {
-					//start := time.Now()
+					start := time.Now()
 					steps := 0
 					expiredEntriesFound := 0
 					current := cache.tail
@@ -118,18 +119,11 @@ func (cache *Cache) StartJanitor() error {
 						if entryFromCache, isInCache := cache.get(lastTraversedNode.Key); isInCache && entryFromCache == lastTraversedNode {
 							current = lastTraversedNode
 						}
-					} else {
-						// XXX: DEBUG
-						if cache.tail != nil && cache.tail == current {
-							if _, isInCache := cache.get(cache.tail.Key); !isInCache {
-								log.Println(fmt.Sprintf("starting the walk from a tail that is no longer in the cache...? key=%s; prev=%s; next=%s; tail=%s; head=%s\n", printIfNotNil(current), printIfNotNil(current.previous), printIfNotNil(current.next), printIfNotNil(cache.tail), printIfNotNil(cache.head)))
-							}
-						}
-						// XXX: DEBUG
 					}
-
 					if current == cache.tail {
-						log.Printf("There are currently %d entries in the cache. The last walk resulted in finding %d expired keys", len(cache.entries), totalNumberOfExpiredKeysInPreviousRunFromTailToHead)
+						if Debug {
+							log.Printf("There are currently %d entries in the cache. The last walk resulted in finding %d expired keys", len(cache.entries), totalNumberOfExpiredKeysInPreviousRunFromTailToHead)
+						}
 						totalNumberOfExpiredKeysInPreviousRunFromTailToHead = 0
 					}
 					for current != nil {
@@ -167,16 +161,15 @@ func (cache *Cache) StartJanitor() error {
 							break
 						}
 					}
-					//log.Printf("traversed %d nodes and found %d expired entries in %s before stopping\n", steps, expiredEntriesFound, time.Since(start))
+					if Debug {
+						log.Printf("traversed %d nodes and found %d expired entries in %s before stopping\n", steps, expiredEntriesFound, time.Since(start))
+					}
 					totalNumberOfExpiredKeysInPreviousRunFromTailToHead += expiredEntriesFound
 				} else {
 					if backOff*2 < JanitorMaxShiftBackOff {
 						backOff *= 2
 					} else {
 						backOff = JanitorMaxShiftBackOff
-					}
-					if len(cache.entries) > 0 {
-						fmt.Println("tail is nil but cache is not empty?")
 					}
 				}
 				cache.mutex.Unlock()
@@ -187,14 +180,16 @@ func (cache *Cache) StartJanitor() error {
 			}
 		}
 	}()
-	go func() {
-		var m runtime.MemStats
-		for {
-			runtime.ReadMemStats(&m)
-			fmt.Printf("Alloc=%vMB; HeapReleased=%vMB; Sys=%vMB; HeapInUse=%vMB; HeapObjects=%v; HeapObjectsFreed=%v; GC=%v\n", m.Alloc/1024/1024, m.HeapReleased/1024/1024, m.Sys/1024/1024, m.HeapInuse/1024/1024, m.HeapObjects, m.Frees, m.NumGC)
-			time.Sleep(3 * time.Second)
-		}
-	}()
+	if Debug {
+		go func() {
+			var m runtime.MemStats
+			for {
+				runtime.ReadMemStats(&m)
+				log.Printf("Alloc=%vMB; HeapReleased=%vMB; Sys=%vMB; HeapInUse=%vMB; HeapObjects=%v; HeapObjectsFreed=%v; GC=%v\n", m.Alloc/1024/1024, m.HeapReleased/1024/1024, m.Sys/1024/1024, m.HeapInuse/1024/1024, m.HeapObjects, m.Frees, m.NumGC)
+				time.Sleep(3 * time.Second)
+			}
+		}()
+	}
 	return nil
 }
 
@@ -443,11 +438,4 @@ func (cache *Cache) evict() {
 		delete(cache.entries, oldTail.Key)
 		cache.Stats.EvictedKeys++
 	}
-}
-
-func printIfNotNil(entry *Entry) string {
-	if entry != nil {
-		return entry.Key
-	}
-	return "<nil>"
 }
