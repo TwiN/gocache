@@ -21,17 +21,19 @@ go get -u github.com/TwinProduction/gocache
 ```
 
 ### Initializing the cache
-```
+```golang
 cache := gocache.NewCache().WithMaxSize(1000).WithEvictionPolicy(gocache.LeastRecentlyUsed)
 ```
 
 ### Creating or updating an entry
-```
+```golang
 cache.Set("key", "value")
+cache.Set("key", 1)
+cache.Set("key", struct{ Text string }{Test: "value"})
 ```
 
 ### Getting an entry
-```
+```golang
 value, ok := cache.Get("key")
 ```
 
