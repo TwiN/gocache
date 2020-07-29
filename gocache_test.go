@@ -82,6 +82,26 @@ func TestCache_Set(t *testing.T) {
 	}
 }
 
+func TestCache_SetDifferentTypesOfData(t *testing.T) {
+	cache := NewCache().WithMaxSize(10)
+	cache.Set("key", 1)
+	value, ok := cache.Get("key")
+	if !ok {
+		t.Error("expected key to exist")
+	}
+	if value != 1 {
+		t.Errorf("expected: %v, but got: %v", 1, value)
+	}
+	cache.Set("key", struct{ Test string }{Test: "test"})
+	value, ok = cache.Get("key")
+	if !ok {
+		t.Error("expected key to exist")
+	}
+	if value.(struct{ Test string }) != struct{ Test string }{Test: "test"} {
+		t.Errorf("expected: %s, but got: %s", "newvalue", value)
+	}
+}
+
 func TestCache_EvictionsRespectMaxSize(t *testing.T) {
 	cache := NewCache().WithMaxSize(5)
 	for n := 0; n < 10; n++ {
