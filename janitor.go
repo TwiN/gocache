@@ -23,11 +23,14 @@ const (
 	JanitorMaxShiftBackOff = time.Millisecond * 500
 )
 
+// StartJanitor starts the janitor on a different goroutine
+// The janitor's job is to delete expired keys in the background.
+// It can be stopped by calling Cache.StopJanitor.
+// If you do not start the janitor, expired keys will only be deleted when they are accessed through Get
 func (cache *Cache) StartJanitor() error {
 	if cache.stopJanitor != nil {
 		return ErrJanitorAlreadyRunning
 	}
-	log.Println("[gocache] Starting Janitor")
 	cache.stopJanitor = make(chan bool)
 	go func() {
 		// rather than starting from the tail on every run, we can try to start from the last next entry
@@ -106,7 +109,6 @@ func (cache *Cache) StartJanitor() error {
 				}
 				cache.mutex.Unlock()
 			case <-cache.stopJanitor:
-				log.Println("[gocache] Stopping Janitor")
 				cache.stopJanitor = nil
 				return
 			}
@@ -125,6 +127,7 @@ func (cache *Cache) StartJanitor() error {
 	return nil
 }
 
+// StopJanitor stops the janitor
 func (cache *Cache) StopJanitor() {
 	cache.stopJanitor <- true
 	time.Sleep(100 * time.Millisecond)

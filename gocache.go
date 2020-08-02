@@ -85,7 +85,7 @@ func (cache *Cache) SetWithTTL(key string, value interface{}, ttl time.Duration)
 	entry, ok := cache.get(key)
 	if !ok {
 		// A negative TTL that isn't -1 (NoExpiration) is an entry that will expire instantly,
-		// so might as well just not create it in the first place    XXX: is this even necessary?
+		// so might as well just not create it in the first place
 		if ttl != NoExpiration && ttl < 0 {
 			cache.mutex.Unlock()
 			return
@@ -231,8 +231,8 @@ func (cache *Cache) TTL(key string) (time.Duration, error) {
 
 // Expire sets a key's expiration time
 //
-// A ttl of -1 means that the key will never expire
-// A ttl of 0 means that the key will expire immediately
+// A TTL of -1 means that the key will never expire
+// A TTL of 0 means that the key will expire immediately
 // If using LRU, note that this does not reset the position of the key
 //
 // Returns true if the cache key exists and has had its expiration time altered
@@ -292,7 +292,6 @@ func (cache *Cache) removeExistingEntryReferences(entry *Entry) {
 	} else if cache.head == entry {
 		cache.head = cache.head.previous
 	}
-	// if entry == cache.tail == cache.head, then won't this mean that this will just make it point to itself?
 	if entry.previous != nil {
 		entry.previous.next = entry.next
 	}
