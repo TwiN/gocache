@@ -14,6 +14,10 @@ to retrieve a cache key that has already expired, it will delete it on the spot 
 the cache key didn't exist. As for passive expiration, there's a background task that will take care of deleting
 expired keys.
 
+While meant to be used as a library, there's a Redis-compatible cache server included. 
+See the [Server](#server) section. 
+It may also serve as a good reference to use in order to implement gocache in your own applications.
+
 
 ## Usage
 ```
