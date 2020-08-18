@@ -26,6 +26,7 @@ var (
 	ErrJanitorAlreadyRunning = errors.New("janitor is already running")
 )
 
+// Cache is the core struct of gocache which contains the data as well as all relevant configuration fields
 type Cache struct {
 	// MaxSize is the maximum amount of entries that can be in the cache at any given time
 	MaxSize int
