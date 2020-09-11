@@ -128,13 +128,13 @@ Any Redis client should be able to interact with the server, though only the fol
 - [X] SETEX
 - [X] TTL
 - [X] FLUSHDB
-- [ ] KEYS
-- [ ] SCAN
 - [X] EXISTS
 - [X] ECHO
+- [ ] KEYS
+- [ ] SCAN
 
 
-## Running server with Docker
+## Running the server with Docker
 
 See the Makefile's `docker-build` and `docker-run` steps.
 
