@@ -29,6 +29,13 @@ go get -u github.com/TwinProduction/gocache
 cache := gocache.NewCache().WithMaxSize(1000).WithEvictionPolicy(gocache.LeastRecentlyUsed)
 ```
 
+If you're planning on using expiration (`SetWithTTL` or `Expire`) and you want expired entries to be automatically deleted 
+in the background, make sure to start the janitor when you instantiate the cache:
+
+```golang
+cache.StartJanitor()
+```
+
 ### Functions
 
 | Function           | Description |
