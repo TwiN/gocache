@@ -168,7 +168,22 @@ func (cache *Cache) GetAll(keys []string) map[string]interface{} {
 	return entries
 }
 
+// GetByPattern retrieves a slice of keys that match a given pattern
+// i.e. cache.GetByPattern("*some*") will return all keys containing "some" in them
+func (cache *Cache) GetByPattern(pattern string) []string {
+	var matchingKeys []string
+	cache.mutex.RLock()
+	for key := range cache.entries {
+		if MatchPattern(pattern, key) {
+			matchingKeys = append(matchingKeys, key)
+		}
+	}
+	cache.mutex.RUnlock()
+	return matchingKeys
+}
+
 // Delete removes a key from the cache
+//
 // Returns false if the key did not exist.
 func (cache *Cache) Delete(key string) bool {
 	cache.mutex.Lock()
