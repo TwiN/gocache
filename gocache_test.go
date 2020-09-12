@@ -62,31 +62,31 @@ func TestCache_GetAll(t *testing.T) {
 	}
 }
 
-func TestCache_GetByPattern(t *testing.T) {
+func TestCache_GetKeysByPattern(t *testing.T) {
 	// All keys match
-	testGetByPattern(t, []string{"key1", "key2", "key3", "key4"}, "key*", 4)
-	testGetByPattern(t, []string{"key1", "key2", "key3", "key4"}, "*y*", 4)
-	testGetByPattern(t, []string{"key1", "key2", "key3", "key4"}, "*key*", 4)
-	testGetByPattern(t, []string{"key1", "key2", "key3", "key4"}, "*", 4)
+	testGetKeysByPattern(t, []string{"key1", "key2", "key3", "key4"}, "key*", 4)
+	testGetKeysByPattern(t, []string{"key1", "key2", "key3", "key4"}, "*y*", 4)
+	testGetKeysByPattern(t, []string{"key1", "key2", "key3", "key4"}, "*key*", 4)
+	testGetKeysByPattern(t, []string{"key1", "key2", "key3", "key4"}, "*", 4)
 	// Some keys match
-	testGetByPattern(t, []string{"key1", "key2", "key3", "key4", "key11"}, "key1*", 2)
-	testGetByPattern(t, []string{"key1", "key2", "key3", "key4", "key11"}, "key1*", 2)
-	testGetByPattern(t, []string{"key1", "key2", "key3", "key4", "key11", "key111"}, "key1*", 3)
-	testGetByPattern(t, []string{"key1", "key2", "key3", "key4", "key11", "key111"}, "key11*", 2)
-	testGetByPattern(t, []string{"key1", "key2", "key3", "key4", "key11", "key111"}, "*11*", 2)
-	testGetByPattern(t, []string{"key1", "key2", "key3", "key4", "key11", "key111"}, "k*1*", 3)
-	testGetByPattern(t, []string{"key1", "key2", "key3", "key4", "key11", "key111"}, "*k*1", 3)
+	testGetKeysByPattern(t, []string{"key1", "key2", "key3", "key4", "key11"}, "key1*", 2)
+	testGetKeysByPattern(t, []string{"key1", "key2", "key3", "key4", "key11"}, "key1*", 2)
+	testGetKeysByPattern(t, []string{"key1", "key2", "key3", "key4", "key11", "key111"}, "key1*", 3)
+	testGetKeysByPattern(t, []string{"key1", "key2", "key3", "key4", "key11", "key111"}, "key11*", 2)
+	testGetKeysByPattern(t, []string{"key1", "key2", "key3", "key4", "key11", "key111"}, "*11*", 2)
+	testGetKeysByPattern(t, []string{"key1", "key2", "key3", "key4", "key11", "key111"}, "k*1*", 3)
+	testGetKeysByPattern(t, []string{"key1", "key2", "key3", "key4", "key11", "key111"}, "*k*1", 3)
 	// No keys match
-	testGetByPattern(t, []string{"key1", "key2", "key3", "key4"}, "image*", 0)
-	testGetByPattern(t, []string{"key1", "key2", "key3", "key4"}, "?", 0)
+	testGetKeysByPattern(t, []string{"key1", "key2", "key3", "key4"}, "image*", 0)
+	testGetKeysByPattern(t, []string{"key1", "key2", "key3", "key4"}, "?", 0)
 }
 
-func testGetByPattern(t *testing.T, keys []string, pattern string, expectedMatchingKeys int) {
+func testGetKeysByPattern(t *testing.T, keys []string, pattern string, expectedMatchingKeys int) {
 	cache := NewCache().WithMaxSize(len(keys))
 	for _, key := range keys {
 		cache.Set(key, key)
 	}
-	matchingKeys := cache.GetByPattern(pattern)
+	matchingKeys := cache.GetKeysByPattern(pattern)
 	if len(matchingKeys) != expectedMatchingKeys {
 		t.Errorf("expected to have %d keys to match pattern '%s', got %d", expectedMatchingKeys, pattern, len(matchingKeys))
 	}

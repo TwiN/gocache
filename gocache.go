@@ -168,9 +168,11 @@ func (cache *Cache) GetAll(keys []string) map[string]interface{} {
 	return entries
 }
 
-// GetByPattern retrieves a slice of keys that match a given pattern
-// i.e. cache.GetByPattern("*some*") will return all keys containing "some" in them
-func (cache *Cache) GetByPattern(pattern string) []string {
+// GetKeysByPattern retrieves a slice of keys that match a given pattern
+// i.e. cache.GetKeysByPattern("*some*") will return all keys containing "some" in them
+//
+// Note that GetKeysByPattern does not trigger evictions, nor does it count as accessing the entry.
+func (cache *Cache) GetKeysByPattern(pattern string) []string {
 	var matchingKeys []string
 	cache.mutex.RLock()
 	for key := range cache.entries {

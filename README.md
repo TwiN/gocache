@@ -41,7 +41,7 @@ cache := gocache.NewCache().WithMaxSize(1000).WithEvictionPolicy(gocache.LeastRe
 | SetWithTTL         | Creates or updates a cache entry with the given key, value and expiration time. If the max size after the aforementioned operation is above the configured max size, the tail will be evicted. Depending on the eviction policy, the tail is defined as the oldest 
 | Get                | Gets a cache entry by its key.
 | GetAll             | Gets a map of entries by their keys. The resulting map will contain all keys, even if some of the keys in the slice passed as parameter were not present in the cache.  
-| GetByPattern       | Retrieves a slice of keys that matches a given pattern.
+| GetKeysByPattern   | Retrieves a slice of keys that matches a given pattern.
 | Delete             | Removes a key from the cache.
 | DeleteAll          | Removes multiple keys from the cache.
 | Count              | Gets the size of the cache. This includes cache keys which may have already expired, but have not been removed yet.
