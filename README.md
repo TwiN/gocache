@@ -146,4 +146,8 @@ Any Redis client should be able to interact with the server, though only the fol
 
 See the Makefile's `docker-build` and `docker-run` steps.
 
-Note that the server version of gocache is still under development. 
+Note that the server version of gocache is still under development.
+
+```
+docker run --name gocache-server -p 6379:6379 twinproduction/gocache-server:v0.0.7
+```
