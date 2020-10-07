@@ -2,6 +2,8 @@
 
 ![build](https://github.com/TwinProduction/gocache/workflows/build/badge.svg?branch=master) 
 [![Go Report Card](https://goreportcard.com/badge/github.com/TwinProduction/gocache)](https://goreportcard.com/report/github.com/TwinProduction/gocache)
+[![Go version](https://img.shields.io/github/go-mod/go-version/TwinProduction/gocache.svg)](https://github.com/TwinProduction/gocache)
+[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](https://godoc.org/github.com/TwinProduction/gocache)
 
 An extremely lightweight and minimal cache.
 
