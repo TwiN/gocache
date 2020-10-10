@@ -143,7 +143,7 @@ func (server *Server) set(cmd redcon.Command, conn redcon.Conn) {
 		return
 	}
 	if numberOfArguments == 3 {
-		server.Cache.Set(string(cmd.Args[1]), cmd.Args[2])
+		server.Cache.Set(string(cmd.Args[1]), string(cmd.Args[2]))
 	} else {
 		unit, err := strconv.Atoi(string(cmd.Args[4]))
 		if err != nil {
@@ -173,7 +173,7 @@ func (server *Server) setex(cmd redcon.Command, conn redcon.Conn) {
 		conn.WriteError("ERR value is not an integer or out of range")
 		return
 	}
-	server.Cache.SetWithTTL(string(cmd.Args[1]), cmd.Args[3], time.Duration(unit)*time.Second)
+	server.Cache.SetWithTTL(string(cmd.Args[1]), string(cmd.Args[3]), time.Duration(unit)*time.Second)
 	conn.WriteString("OK")
 }
 
