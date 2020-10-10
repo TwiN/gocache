@@ -127,6 +127,13 @@ func (cache *Cache) SetWithTTL(key string, value interface{}, ttl time.Duration)
 	cache.mutex.Unlock()
 }
 
+// SetAll creates or updates multiple values
+func (cache *Cache) SetAll(entries map[string]interface{}) {
+	for key, value := range entries {
+		cache.SetWithTTL(key, value, NoExpiration)
+	}
+}
+
 // Get retrieves an entry using the key passed as parameter
 // If there is no such entry, the value returned will be nil and the boolean will be false
 // If there is an entry, the value returned will be the value cached and the boolean will be true

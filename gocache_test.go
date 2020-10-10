@@ -132,6 +132,33 @@ func TestCache_SetDifferentTypesOfData(t *testing.T) {
 	}
 }
 
+func TestCache_SetAll(t *testing.T) {
+	cache := NewCache().WithMaxSize(10)
+	cache.SetAll(map[string]interface{}{"k1": "v1", "k2": "v2"})
+	value, ok := cache.Get("k1")
+	if !ok {
+		t.Error("expected key to exist")
+	}
+	if value != "v1" {
+		t.Errorf("expected: %s, but got: %s", "v1", value)
+	}
+	value, ok = cache.Get("k2")
+	if !ok {
+		t.Error("expected key to exist")
+	}
+	if value != "v2" {
+		t.Errorf("expected: %s, but got: %s", "v2", value)
+	}
+	cache.SetAll(map[string]interface{}{"k1": "updated"})
+	value, ok = cache.Get("k1")
+	if !ok {
+		t.Error("expected key to exist")
+	}
+	if value != "updated" {
+		t.Errorf("expected: %s, but got: %s", "updated", value)
+	}
+}
+
 func TestCache_EvictionsRespectMaxSize(t *testing.T) {
 	cache := NewCache().WithMaxSize(5)
 	for n := 0; n < 10; n++ {

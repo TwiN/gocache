@@ -47,6 +47,7 @@ cache.StartJanitor()
 | StartJanitor       | Starts the janitor, which is in charge of deleting expired cache entries in the background.
 | StopJanitor        | Stops the janitor.
 | Set                | Same as `SetWithTTL`, but with no expiration (`gocache.NoExpiration`)
+| SetAll             | Same as `Set`, but in bulk
 | SetWithTTL         | Creates or updates a cache entry with the given key, value and expiration time. If the max size after the aforementioned operation is above the configured max size, the tail will be evicted. Depending on the eviction policy, the tail is defined as the oldest 
 | Get                | Gets a cache entry by its key.
 | GetAll             | Gets a map of entries by their keys. The resulting map will contain all keys, even if some of the keys in the slice passed as parameter were not present in the cache.  
