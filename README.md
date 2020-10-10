@@ -24,6 +24,8 @@ with support for LRU and FIFO eviction policies as well as expiration, bulk oper
   - [Persistence](#persistence)
   - [Server](#server)
 - [Running the server with Docker](#running-the-server-with-docker)
+- [FAQ](#faq)
+  - [Why does the memory usage not go down?](#why-does-the-memory-usage-not-go-down)
 
 
 ## Features
@@ -246,3 +248,30 @@ Note that the server version of gocache is still under development.
 ```
 docker run --name gocache-server -p 6379:6379 twinproduction/gocache-server:v0.1.0
 ```
+
+
+## FAQ
+
+### Why does the memory usage not go down?
+By default, Go uses `MADV_FREE` if the kernel supports it to release memory, which is significantly more efficient 
+than using `MADV_DONTNEED`. Unfortunately, this means that RSS doesn't go down unless the OS actually needs the 
+memory. 
+
+Technically, the memory _is_ available to the kernel, even if it shows a high memory usage, but the OS will only
+use that memory if it needs to. In the case that the OS does need the freed memory, the RSS will go down and you'll
+notice the memory usage lowering.
+
+[reference](https://github.com/golang/go/issues/33376#issuecomment-666455792)
+
+You can reproduce this by following the steps below:
+- Start gocacheserver
+- Note the memory usage
+- Create 500k keys
+- Note the memory usage
+- Flush the cache
+- Note that the memory usage has not decreased, despite the cache being empty.
+
+**Substituting gocache for a normal map will yield the same result.**
+
+If the released memory still appearing as used is a problem for you, 
+you can set the environment variable `GODEBUG` to `madvdontneed=1`.
