@@ -158,6 +158,7 @@ func main() {
 
 <details>
   <summary>Output</summary>
+
 ```
 [Get] key=key; value=value; exists=true
 [GetAll] key=k2; value=v2
