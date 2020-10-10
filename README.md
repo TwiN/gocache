@@ -4,10 +4,30 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/TwinProduction/gocache)](https://goreportcard.com/report/github.com/TwinProduction/gocache)
 [![Go version](https://img.shields.io/github/go-mod/go-version/TwinProduction/gocache.svg)](https://github.com/TwinProduction/gocache)
 [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](https://godoc.org/github.com/TwinProduction/gocache)
+[![Docker pulls](https://img.shields.io/docker/pulls/twinproduction/gocache-server.svg)](https://cloud.docker.com/repository/docker/twinproduction/gocache-server)
 
-An extremely lightweight and minimal cache.
+gocache is an easy-to-use, high-performance, lightweight and thread-safe (goroutine-safe) in-memory key-value cache 
+with support for LRU and FIFO eviction policies as well as expiration, bulk operations and even persistence to file.
 
-It supports the following cache eviction policies: 
+
+## Table of Contents
+
+- [Features](#features)
+- [Usage](#usage)
+  - [Initializing the cache](#initializing-the-cache)
+  - [Functions](#functions)
+  - [Examples](#examples)
+    - [Creating or updating an entry](#creating-or-updating-an-entry)
+    - [Getting an entry](#getting-an-entry)
+    - [Deleting an entry](#deleting-an-entry)
+    - [Complex example](#complex-example)
+  - [Persistence](#persistence)
+  - [Server](#server)
+- [Running the server with Docker](#running-the-server-with-docker)
+
+
+## Features
+gocache supports the following cache eviction policies: 
 - First in first out (FIFO)
 - Least recently used (LRU)
 
@@ -27,14 +47,14 @@ go get -u github.com/TwinProduction/gocache
 ```
 
 ### Initializing the cache
-```golang
+```go
 cache := gocache.NewCache().WithMaxSize(1000).WithEvictionPolicy(gocache.LeastRecentlyUsed)
 ```
 
 If you're planning on using expiration (`SetWithTTL` or `Expire`) and you want expired entries to be automatically deleted 
 in the background, make sure to start the janitor when you instantiate the cache:
 
-```golang
+```go
 cache.StartJanitor()
 ```
 
@@ -61,40 +81,110 @@ cache.StartJanitor()
 | SaveToFile         | Stores the content of the cache to a file so that it can be read using `ReadFromFile`
 | ReadFromFile       | Populates the cache using a file created using `SaveToFile`
 
+
 ### Examples
 
 #### Creating or updating an entry
-```golang
+```go
 cache.Set("key", "value") 
 cache.Set("key", 1)
 cache.Set("key", struct{ Text string }{Test: "value"})
 ```
 
 #### Getting an entry
-```golang
+```go
 value, ok := cache.Get("key")
 ```
-
 You can also get multiple entries by using `cache.GetAll([]string{"key1", "key2"})`
 
 #### Deleting an entry
-```golang
+```go
 cache.Delete("key")
 ```
-
 You can also delete multiple entries by using `cache.DeleteAll([]string{"key1", "key2"})`
+
+#### Complex example
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/TwinProduction/gocache"
+	"time"
+)
+
+func main() {
+	cache := gocache.NewCache().WithEvictionPolicy(gocache.LeastRecentlyUsed).WithMaxSize(10000)
+	cache.StartJanitor() // Manages expired entries
+
+	cache.Set("key", "value")
+	cache.SetWithTTL("key-with-ttl", "value", 60*time.Minute)
+	cache.SetAll(map[string]interface{}{"k1": "v1", "k2": "v2", "k3": "v3"})
+
+	value, exists := cache.Get("key")
+	fmt.Printf("[Get] key=key; value=%s; exists=%v\n", value, exists)
+	for key, value := range cache.GetAll([]string{"k1", "k2", "k3"}) {
+		fmt.Printf("[GetAll] key=%s; value=%s\n", key, value)
+	}
+	for _, key := range cache.GetKeysByPattern("key*", 0) {
+		fmt.Printf("[GetKeysByPattern] key=%s\n", key)
+	}
+
+	fmt.Println("Cache size before persisting cache to file:", cache.Count())
+	err := cache.SaveToFile("cache.bak")
+	if err != nil {
+		panic(fmt.Sprintf("failed to persist cache to file: %s", err.Error()))
+	}
+
+	cache.Expire("key", time.Hour)
+	time.Sleep(500*time.Millisecond)
+	timeUntilExpiration, _ := cache.TTL("key")
+	fmt.Println("Number of minutes before 'key' expires:", int(timeUntilExpiration.Seconds()))
+
+	cache.Delete("key")
+	cache.DeleteAll([]string{"k1", "k2", "k3"})
+
+	fmt.Println("Cache size before restoring cache from file:", cache.Count())
+	_, err = cache.ReadFromFile("cache.bak")
+	if err != nil {
+		panic(fmt.Sprintf("failed to restore cache from file: %s", err.Error()))
+	}
+
+	fmt.Println("Cache size after restoring cache from file:", cache.Count())
+	cache.Clear()
+	fmt.Println("Cache size after clearing the cache:", cache.Count())
+}
+```
+
+<details>
+  <summary>Output</summary>
+```
+[Get] key=key; value=value; exists=true
+[GetAll] key=k2; value=v2
+[GetAll] key=k3; value=v3
+[GetAll] key=k1; value=v1
+[GetKeysByPattern] key=key
+[GetKeysByPattern] key=key-with-ttl
+Cache size before persisting cache to file: 5
+Number of minutes before 'key' expires: 3599
+Cache size before restoring cache from file: 1
+Cache size after restoring cache from file: 5
+Cache size after clearing the cache: 0
+```
+</details>
+
 
 ### Persistence
 While gocache is an in-memory cache, you can still save the content of the cache in a file
 and vice versa.
 
 To save the content of the cache to a file:
-```golang
+```go
 err := cache.SaveToFile(TestCacheFile)
 ```
 
 To retrieve the content of the cache from a file:
-```golang
+```go
 numberOfEntriesEvicted, err := newCache.ReadFromFile(TestCacheFile)
 ```
 The `numberOfEntriesEvicted` will be non-zero only if the number of entries 
@@ -102,7 +192,6 @@ in the file is higher than the cache's configured `MaxSize`.
 
 
 ### Server
-
 For the sake of convenience, a ready-to-go cache server is available 
 through the `gocacheserver` package. 
 
@@ -113,7 +202,7 @@ implementation uses redcon, which is a Redis server framework for Go.
 That way, those who desire to use gocache without the server will not add any extra dependencies
 as long as they don't import the `gocacheserver` package. 
 
-```golang
+```go
 package main
 
 import (
@@ -149,10 +238,10 @@ Any Redis client should be able to interact with the server, though only the fol
 
 ## Running the server with Docker
 
-See the Makefile's `docker-build` and `docker-run` steps.
+To build it locally, refer to the Makefile's `docker-build` and `docker-run` steps.
 
 Note that the server version of gocache is still under development.
 
 ```
-docker run --name gocache-server -p 6379:6379 twinproduction/gocache-server:v0.0.7
+docker run --name gocache-server -p 6379:6379 twinproduction/gocache-server:v0.1.0
 ```
