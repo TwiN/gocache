@@ -14,7 +14,7 @@ const (
 	NoMaxSize = 0
 
 	// DefaultMaxSize is the max size set if no max size is specified
-	DefaultMaxSize = 1000
+	DefaultMaxSize = 100000
 
 	// NoExpiration is the value that must be used as TTL to specify that the given key should never expire
 	NoExpiration = -1
