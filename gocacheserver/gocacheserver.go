@@ -77,6 +77,8 @@ func (server *Server) Start() error {
 				server.exists(cmd, conn)
 			case "MGET":
 				server.mget(cmd, conn)
+			case "MSET":
+				server.mset(cmd, conn)
 			case "TTL":
 				server.ttl(cmd, conn)
 			case "EXPIRE":
@@ -233,6 +235,26 @@ func (server *Server) mget(cmd redcon.Command, conn redcon.Conn) {
 	for _, key := range keys {
 		conn.WriteAny(keyValues[key])
 	}
+}
+
+func (server *Server) mset(cmd redcon.Command, conn redcon.Conn) {
+	if len(cmd.Args) < 3 {
+		conn.WriteError(fmt.Sprintf("ERR wrong number of arguments for '%s' command", string(cmd.Args[0])))
+		return
+	}
+	newEntries := make(map[string]interface{})
+	for index := range cmd.Args {
+		if index == 0 {
+			continue
+		}
+		if index%2 == 0 {
+			key := string(cmd.Args[index-1])
+			value := string(cmd.Args[index])
+			newEntries[key] = value
+		}
+	}
+	server.Cache.SetAll(newEntries)
+	conn.WriteString("OK")
 }
 
 func (server *Server) ttl(cmd redcon.Command, conn redcon.Conn) {
