@@ -143,6 +143,8 @@ Any Redis client should be able to interact with the server, though only the fol
 - [X] ECHO
 - [ ] KEYS
 - [ ] SCAN
+- [X] MGET
+- [X] MSET
 
 
 ## Running the server with Docker
