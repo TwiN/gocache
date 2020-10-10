@@ -122,7 +122,7 @@ import (
 )
 
 func main() {
-	cache := gocache.NewCache()
+	cache := gocache.NewCache().WithEvictionPolicy(gocache.LeastRecentlyUsed).WithMaxSize(100000)
 	server := gocacheserver.NewServer(cache)
 	server.Start()
 }
@@ -141,10 +141,10 @@ Any Redis client should be able to interact with the server, though only the fol
 - [X] FLUSHDB
 - [X] EXISTS
 - [X] ECHO
-- [ ] KEYS
-- [ ] SCAN
 - [X] MGET
 - [X] MSET
+- [X] SCAN (kind of - cursor is not currently supported)
+- [ ] KEYS
 
 
 ## Running the server with Docker

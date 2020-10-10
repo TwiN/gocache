@@ -79,6 +79,8 @@ func (server *Server) Start() error {
 				server.mget(cmd, conn)
 			case "MSET":
 				server.mset(cmd, conn)
+			case "SCAN":
+				server.scan(cmd, conn)
 			case "TTL":
 				server.ttl(cmd, conn)
 			case "EXPIRE":
@@ -255,6 +257,73 @@ func (server *Server) mset(cmd redcon.Command, conn redcon.Conn) {
 	}
 	server.Cache.SetAll(newEntries)
 	conn.WriteString("OK")
+}
+
+// scan is used to search keys by pattern
+// At the moment, the cursor is ignored.
+func (server *Server) scan(cmd redcon.Command, conn redcon.Conn) {
+	numberOfArguments := len(cmd.Args)
+	if numberOfArguments != 2 && numberOfArguments != 4 && numberOfArguments != 6 {
+		conn.WriteError(fmt.Sprintf("ERR wrong number of arguments for '%s' command", string(cmd.Args[0])))
+		return
+	}
+	// XXX: The cursor is currently ignored, but we'll still validate it
+	_, err := strconv.Atoi(string(cmd.Args[1]))
+	if err != nil {
+		conn.WriteError("ERR value is not an integer or out of range")
+		return
+	}
+	var keys []string
+	if numberOfArguments == 2 {
+		keys = server.Cache.GetKeysByPattern("*", 10)
+	} else {
+		var (
+			count              = 10
+			pattern            = "*"
+			isConfiguringCount = false
+			isConfiguringMatch = false
+		)
+		for index := range cmd.Args {
+			if index < 2 {
+				continue
+			}
+			switch strings.ToUpper(string(cmd.Args[index])) {
+			case "MATCH":
+				isConfiguringCount = false
+				isConfiguringMatch = true
+			case "COUNT":
+				isConfiguringCount = true
+				isConfiguringMatch = false
+			default:
+				if isConfiguringCount {
+					isConfiguringCount = false
+					count, err = strconv.Atoi(string(cmd.Args[index]))
+					if err != nil {
+						conn.WriteError("ERR value is not an integer or out of range")
+						return
+					}
+				} else if isConfiguringMatch {
+					isConfiguringMatch = false
+					pattern = string(cmd.Args[index])
+				} else {
+					conn.WriteError("ERR syntax error")
+					return
+				}
+			}
+		}
+		keys = server.Cache.GetKeysByPattern(pattern, count)
+	}
+	conn.WriteArray(2)
+	// The first value is the cursor used in the previous call. Since we don't support cursors at the moment, we'll
+	// hardcode this to 0.
+	// This is to prevent automated libraries from looping forever:
+	//     An iteration starts when the cursor is set to 0, and terminates when the cursor returned by the server is 0.
+	//                                                                        reference: https://redis.io/commands/scan
+	conn.WriteAny(0)
+	conn.WriteArray(len(keys))
+	for _, key := range keys {
+		conn.WriteAny(key)
+	}
 }
 
 func (server *Server) ttl(cmd redcon.Command, conn redcon.Conn) {

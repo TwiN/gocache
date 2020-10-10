@@ -86,7 +86,7 @@ func testGetKeysByPattern(t *testing.T, keys []string, pattern string, expectedM
 	for _, key := range keys {
 		cache.Set(key, key)
 	}
-	matchingKeys := cache.GetKeysByPattern(pattern)
+	matchingKeys := cache.GetKeysByPattern(pattern, 0)
 	if len(matchingKeys) != expectedMatchingKeys {
 		t.Errorf("expected to have %d keys to match pattern '%s', got %d", expectedMatchingKeys, pattern, len(matchingKeys))
 	}

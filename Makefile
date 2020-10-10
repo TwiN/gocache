@@ -7,6 +7,9 @@ docker-run:
 run:
 	PORT=6666 go run examples/server/server.go
 
+start-redis:
+	docker run -p 6379:6379 --name redis -d redis
+
 redis-benchmark:
 	redis-benchmark -p 6666 -t set,get -n 10000000 -r 200000 -q -P 512 -c 512
 
