@@ -25,6 +25,9 @@ with support for LRU and FIFO eviction policies as well as expiration, bulk oper
   - [Persistence](#persistence)
   - [Server](#server)
 - [Running the server with Docker](#running-the-server-with-docker)
+- [Performance](#performance)
+  - [Summary](#summary)
+  - [Results](#results)
 - [FAQ](#faq)
   - [Why does the memory usage not go down?](#why-does-the-memory-usage-not-go-down)
 
@@ -38,6 +41,8 @@ It also supports cache entry TTL, which is both active and passive. Active expir
 to retrieve a cache key that has already expired, it will delete it on the spot and the behavior will be as if
 the cache key didn't exist. As for passive expiration, there's a background task that will take care of deleting
 expired keys.
+
+It also includes what you'd expect from a cache, like bulk operations, persistence and patterns.
 
 While meant to be used as a library, there's a Redis-compatible cache server included. 
 See the [Server](#server) section. 
@@ -241,13 +246,98 @@ Any Redis client should be able to interact with the server, though only the fol
 
 
 ## Running the server with Docker
-
 To build it locally, refer to the Makefile's `docker-build` and `docker-run` steps.
 
 Note that the server version of gocache is still under development.
 
 ```
 docker run --name gocache-server -p 6379:6379 twinproduction/gocache-server:v0.1.0
+```
+
+
+## Performance
+
+### Summary
+- **Set**: Both map and gocache have the same performance.
+- **Get**: The map is slightly faster than gocache. 
+
+This is because gocache keeps track of the head and the tail for eviction and expiration/TTL. 
+
+Ultimately, the difference is negligible. 
+
+We could add a way to disable eviction or disable expiration altogether just to match the map's performance, 
+but if you're looking into using a library like gocache, odds are, you want more than just a map.
+
+
+### Results
+| key    | value    |
+|:------ |:-------- |
+| goos   | windows  |
+| goarch | amd64    |
+| cpu    | i7-9700K |
+| mem    | 32G DDR4 |
+
+```
+BenchmarkMap_Get
+BenchmarkMap_Get-8                                                       46103308	   26.5 ns/op
+BenchmarkMap_SetSmallValue
+BenchmarkMap_SetSmallValue-8                                              3691896	   390 ns/op
+BenchmarkMap_SetMediumValue
+BenchmarkMap_SetMediumValue-8                                             3883486	   389 ns/op
+BenchmarkMap_SetLargeValue
+BenchmarkMap_SetLargeValue-8                                              3930363	   390 ns/op
+BenchmarkCache_Get
+BenchmarkCache_Get-8                                                     27883308	   45.2 ns/op
+BenchmarkCache_SetSmallValue
+BenchmarkCache_SetSmallValue-8                                            2946333	   398 ns/op
+BenchmarkCache_SetMediumValue
+BenchmarkCache_SetMediumValue-8                                           2912028	   388 ns/op
+BenchmarkCache_SetLargeValue
+BenchmarkCache_SetLargeValue-8                                            2970049	   385 ns/op
+BenchmarkCache_SetSmallValueWithMaxSize10
+BenchmarkCache_SetSmallValueWithMaxSize10-8                               5278617	   229 ns/op
+BenchmarkCache_SetMediumValueWithMaxSize10
+BenchmarkCache_SetMediumValueWithMaxSize10-8                              5224278	   229 ns/op
+BenchmarkCache_SetLargeValueWithMaxSize10
+BenchmarkCache_SetLargeValueWithMaxSize10-8                               5226096	   231 ns/op
+BenchmarkCache_SetSmallValueWithMaxSize1000
+BenchmarkCache_SetSmallValueWithMaxSize1000-8                             5018584	   239 ns/op
+BenchmarkCache_SetMediumValueWithMaxSize1000
+BenchmarkCache_SetMediumValueWithMaxSize1000-8                            5021300	   240 ns/op
+BenchmarkCache_SetLargeValueWithMaxSize1000
+BenchmarkCache_SetLargeValueWithMaxSize1000-8                             5037594	   240 ns/op
+BenchmarkCache_SetSmallValueWithMaxSize100000
+BenchmarkCache_SetSmallValueWithMaxSize100000-8                           3683408	   322 ns/op
+BenchmarkCache_SetMediumValueWithMaxSize100000
+BenchmarkCache_SetMediumValueWithMaxSize100000-8                          3783688	   320 ns/op
+BenchmarkCache_SetLargeValueWithMaxSize100000
+BenchmarkCache_SetLargeValueWithMaxSize100000-8                           3647302	   323 ns/op
+BenchmarkCache_SetSmallValueWithMaxSize100000AndLRU
+BenchmarkCache_SetSmallValueWithMaxSize100000AndLRU-8                     3749640	   321 ns/op
+BenchmarkCache_SetMediumValueWithMaxSize100000AndLRU
+BenchmarkCache_SetMediumValueWithMaxSize100000AndLRU-8                    3796221	   322 ns/op
+BenchmarkCache_SetLargeValueWithMaxSize100000AndLRU
+BenchmarkCache_SetLargeValueWithMaxSize100000AndLRU-8                     3737858	   323 ns/op
+BenchmarkCache_GetAndSetConcurrently
+BenchmarkCache_GetAndSetConcurrently-8                                    1692525	   703 ns/op
+BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndLRU
+BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndLRU-8                2582576	   491 ns/op
+BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndFIFO
+BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndFIFO-8               2602639	   477 ns/op
+BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndNoEvictionAndLRU
+BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndNoEvictionAndLRU-8   2177972	   579 ns/op
+BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndNoEvictionAndFIFO
+BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndNoEvictionAndFIFO-8  2222224	   569 ns/op
+BenchmarkCache_GetAndSetConcurrentlyWithFrequentEvictionsAndLRU
+BenchmarkCache_GetAndSetConcurrentlyWithFrequentEvictionsAndLRU-8         3738321	   323 ns/op
+BenchmarkCache_GetAndSetConcurrentlyWithFrequentEvictionsAndFIFO
+BenchmarkCache_GetAndSetConcurrentlyWithFrequentEvictionsAndFIFO-8        3669382	   323 ns/op
+BenchmarkCache_GetConcurrentlyWithLRU
+BenchmarkCache_GetConcurrentlyWithLRU-8                                   1539992	   750 ns/op
+BenchmarkCache_GetConcurrentlyWithFIFO
+BenchmarkCache_GetConcurrentlyWithFIFO-8                                  1550388	   744 ns/op
+BenchmarkCache_GetKeysThatDoNotExistConcurrently
+BenchmarkCache_GetKeysThatDoNotExistConcurrently-8                       10529446	   116 ns/op
 ```
 
 
