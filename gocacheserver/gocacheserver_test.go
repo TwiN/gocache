@@ -118,7 +118,7 @@ func TestEXPIRE(t *testing.T) {
 	// expire the key now
 	client.Expire("key", 0)
 	// wait a bit to make sure the key's gone
-	time.Sleep(time.Millisecond * 50)
+	time.Sleep(time.Millisecond)
 	if _, ok := server.Cache.Get("key"); ok {
 		t.Error("key should've expired")
 	}
