@@ -4,6 +4,7 @@ import (
 	"github.com/TwinProduction/gocache"
 	"github.com/go-redis/redis"
 	"testing"
+	"time"
 )
 
 var (
@@ -103,5 +104,91 @@ func TestMSET(t *testing.T) {
 	}
 	if _, ok := server.Cache.Get("k2"); !ok {
 		t.Error("k2 should've existed")
+	}
+}
+
+func TestEXPIRE(t *testing.T) {
+	defer server.Cache.Clear()
+	client.Set("key", "value", 0)
+	if _, ok := server.Cache.Get("key"); !ok {
+		t.Error("key should've existed")
+	}
+	// expire the key now
+	client.Expire("key", 0)
+	// wait a bit to make sure the key's gone
+	time.Sleep(time.Millisecond * 50)
+	if _, ok := server.Cache.Get("key"); ok {
+		t.Error("key should've expired")
+	}
+}
+
+func TestFLUSHDB(t *testing.T) {
+	defer server.Cache.Clear()
+	server.Cache.Set("key", "value")
+	if server.Cache.Count() != 1 {
+		t.Error("cache should have a size of 1")
+	}
+	client.FlushDB()
+	if server.Cache.Count() != 0 {
+		t.Error("cache should've been cleared")
+	}
+}
+
+func TestPING(t *testing.T) {
+	if client.Ping().Val() != "PONG" {
+		t.Error("Server should've been able to pong :(")
+	}
+}
+
+func TestECHO(t *testing.T) {
+	if client.Echo("hey").Val() != "hey" {
+		t.Error("Server should've been able to echo")
+	}
+}
+
+func TestINFO(t *testing.T) {
+	if len(client.Info().Val()) < 100 {
+		t.Error("INFO should've returned at least some info")
+	}
+}
+
+func TestSCAN(t *testing.T) {
+	defer server.Cache.Clear()
+	server.Cache.Set("vegetable", "true")
+	server.Cache.Set("k1", "value")
+	server.Cache.Set("k2", "value")
+	server.Cache.Set("fruit", "true")
+	if server.Cache.Count() != 4 {
+		t.Error("cache should have a size of 4")
+	}
+	keys, cursor := client.Scan(0, "k*", 9999).Val()
+	if cursor != 0 {
+		t.Error("cursor returned should've been 0, because it isn't supported yet")
+	}
+	if len(keys) != 2 {
+		t.Error("should've returned 2 keys")
+	}
+	for _, k := range keys {
+		if k != "k1" && k != "k2" {
+			t.Error("key should've been k1 or k2, but was", k)
+		}
+	}
+}
+
+func TestSCANAndRespectCount(t *testing.T) {
+	defer server.Cache.Clear()
+	server.Cache.Set("vegetable", "true")
+	server.Cache.Set("k1", "value")
+	server.Cache.Set("k2", "value")
+	server.Cache.Set("fruit", "true")
+	if server.Cache.Count() != 4 {
+		t.Error("cache should have a size of 4")
+	}
+	keys, cursor := client.Scan(0, "k*", 1).Val()
+	if cursor != 0 {
+		t.Error("cursor returned should've been 0, because it isn't supported yet")
+	}
+	if len(keys) != 1 {
+		t.Error("should've returned 1 key, because the limit was set to 1")
 	}
 }
