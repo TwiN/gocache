@@ -86,6 +86,40 @@ func TestSET(t *testing.T) {
 	}
 }
 
+func TestSET_PX(t *testing.T) {
+	defer server.Cache.Clear()
+	const ExpectedValue = "v"
+	client.Set("key", ExpectedValue, 9999*time.Millisecond)
+	value, err := client.Get("key").Result()
+	if err != nil {
+		t.Error(err)
+	}
+	if value != ExpectedValue {
+		t.Errorf("expected: %s, but got: %s", ExpectedValue, value)
+	}
+	ttl, _ := server.Cache.TTL("key")
+	if ttl.Seconds() < 9 || ttl.Seconds() > 10 {
+		t.Error("expected TTL of ~9999ms")
+	}
+}
+
+func TestSET_EX(t *testing.T) {
+	defer server.Cache.Clear()
+	const ExpectedValue = "v"
+	client.Set("key", ExpectedValue, 10*time.Second)
+	value, err := client.Get("key").Result()
+	if err != nil {
+		t.Error(err)
+	}
+	if value != ExpectedValue {
+		t.Errorf("expected: %s, but got: %s", ExpectedValue, value)
+	}
+	ttl, _ := server.Cache.TTL("key")
+	if ttl.Seconds() < 8 || ttl.Seconds() > 10 {
+		t.Error("expected TTL of ~10s")
+	}
+}
+
 func TestDEL(t *testing.T) {
 	defer server.Cache.Clear()
 	client.Set("key", "value", 0)
@@ -216,5 +250,14 @@ func TestSCAN_AndRespectCount(t *testing.T) {
 	}
 	if len(keys) != 1 {
 		t.Error("should've returned 1 key, because the limit was set to 1")
+	}
+}
+
+func TestTTL(t *testing.T) {
+	defer server.Cache.Clear()
+	client.Set("key", "value", 10*time.Second)
+	ttl := client.TTL("key").Val()
+	if ttl.Seconds() < 9 || ttl.Seconds() > 10 {
+		t.Error("expected TTL of ~9999ms")
 	}
 }
