@@ -124,18 +124,18 @@ func TestEXPIRE(t *testing.T) {
 	}
 }
 
-//func TestSETEX(t *testing.T) {
-//	defer server.Cache.Clear()
-//	// SETEX doesn't exist in the library, see https://github.com/go-redis/redis/pull/1546
-//	client.SetEX("key", "value", time.Hour)
-//	if _, ok := server.Cache.Get("key"); !ok {
-//		t.Error("key should've existed")
-//	}
-//	ttl, _ := server.Cache.TTL("key")
-//	if ttl.Minutes() < 59 || ttl.Minutes() > 60 {
-//		t.Error("key should've had a TTL between 59 and 60 minutes")
-//	}
-//}
+func TestSETEX(t *testing.T) {
+	defer server.Cache.Clear()
+	// SETEX doesn't exist in the library, see https://github.com/go-redis/redis/pull/1546
+	client.Do("SETEX", "key", time.Hour.Seconds(), "value").Val()
+	if _, ok := server.Cache.Get("key"); !ok {
+		t.Error("key should've existed")
+	}
+	ttl, _ := server.Cache.TTL("key")
+	if ttl.Minutes() < 59 || ttl.Minutes() > 60 {
+		t.Error("key should've had a TTL between 59 and 60 minutes")
+	}
+}
 
 func TestEXISTS(t *testing.T) {
 	defer server.Cache.Clear()
