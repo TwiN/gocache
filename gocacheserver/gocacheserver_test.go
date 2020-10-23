@@ -124,6 +124,30 @@ func TestEXPIRE(t *testing.T) {
 	}
 }
 
+//func TestSETEX(t *testing.T) {
+//	defer server.Cache.Clear()
+//	// SETEX doesn't exist in the library, see https://github.com/go-redis/redis/pull/1546
+//	client.SetEX("key", "value", time.Hour)
+//	if _, ok := server.Cache.Get("key"); !ok {
+//		t.Error("key should've existed")
+//	}
+//	ttl, _ := server.Cache.TTL("key")
+//	if ttl.Minutes() < 59 || ttl.Minutes() > 60 {
+//		t.Error("key should've had a TTL between 59 and 60 minutes")
+//	}
+//}
+
+func TestEXISTS(t *testing.T) {
+	defer server.Cache.Clear()
+	client.Set("k1", "v1", 0)
+	client.Set("k2", "v2", 0)
+	client.Set("k3", "v3", 0)
+	output := client.Exists("k1", "k2", "key-that-does-not-exist").Val()
+	if output != 2 {
+		t.Error("Expected 2 keys to exist, got", output)
+	}
+}
+
 func TestFLUSHDB(t *testing.T) {
 	defer server.Cache.Clear()
 	server.Cache.Set("key", "value")
@@ -177,7 +201,7 @@ func TestSCAN(t *testing.T) {
 	}
 }
 
-func TestSCANAndRespectCount(t *testing.T) {
+func TestSCAN_AndRespectCount(t *testing.T) {
 	defer server.Cache.Clear()
 	server.Cache.Set("vegetable", "true")
 	server.Cache.Set("k1", "value")
