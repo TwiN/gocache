@@ -2,10 +2,10 @@ docker-build:
 	docker build --tag=gocache-server .
 
 docker-run:
-	docker run -p 6666:6379 --name gocache-server -d -m=512m gocache-server
+	docker run -p 6666:6379 -e AUTOSAVE=true --name gocache-server -d -m=512m gocache-server
 
 run:
-	PORT=6666 go run examples/server/server.go
+	PORT=6666 go run gocacheserver/main/server.go
 
 start-redis:
 	docker run -p 6379:6379 --name redis -d redis
