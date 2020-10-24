@@ -5,6 +5,7 @@ package gocacheserver
 import (
 	"github.com/TwinProduction/gocache"
 	"github.com/go-redis/redis"
+	"os"
 	"testing"
 	"time"
 )
@@ -259,5 +260,37 @@ func TestTTL(t *testing.T) {
 	ttl := client.TTL("key").Val()
 	if ttl.Seconds() < 9 || ttl.Seconds() > 10 {
 		t.Error("expected TTL of ~9999ms")
+	}
+}
+
+func TestServer_WithAutoSave(t *testing.T) {
+	defer os.Remove("TestServer_WithAutoSave.bak")
+	serverWithAutoSave := NewServer(gocache.NewCache().WithEvictionPolicy(gocache.LeastRecentlyUsed).WithMaxSize(10)).WithPort(16163).WithAutoSave(10*time.Millisecond, "TestServer_WithAutoSave.bak")
+	go serverWithAutoSave.Start()
+	serverWithAutoSave.Cache.Set("john", "doe")
+	serverWithAutoSave.Cache.Set("jane", "doe")
+	// Wait long enough for the auto save to be triggered
+	time.Sleep(30 * time.Millisecond)
+	// Stop the server
+	serverWithAutoSave.Stop()
+	for {
+		if !serverWithAutoSave.running {
+			break
+		}
+		time.Sleep(time.Millisecond)
+	}
+	// We'll start another server with the save configuration as the first server.
+	// This should trigger the data from the first server to be retrieved from the AutoSaveFile into the new server.
+	otherServerWithAutoSave := NewServer(gocache.NewCache().WithEvictionPolicy(gocache.LeastRecentlyUsed).WithMaxSize(10)).WithPort(16163).WithAutoSave(10*time.Minute, "TestServer_WithAutoSave.bak")
+	go otherServerWithAutoSave.Start()
+	// Wait for long enough to the cache to be re-populated
+	for {
+		if otherServerWithAutoSave.running {
+			break
+		}
+		time.Sleep(time.Millisecond)
+	}
+	if otherServerWithAutoSave.Cache.Count() != 2 {
+		t.Errorf("New cache server should've been repopulated by the AutoSaveFile of and have a size of 2, but has %d instead", otherServerWithAutoSave.Cache.Count())
 	}
 }

@@ -28,6 +28,9 @@ type Server struct {
 
 	startTime           time.Time
 	numberOfConnections int
+
+	running     bool
+	cacheServer *redcon.Server
 }
 
 // NewServer creates a new cache server
@@ -38,8 +41,9 @@ func NewServer(cache *gocache.Cache) *Server {
 	}
 }
 
-// WithAutoSave allows the configuration of the autosave feature interval at which
-// the cache will be automatically saved
+// WithAutoSave allows the configuration of the automatic saving feature.
+// Note that setting this will also cause the server to immediately read the file passed and populate the cache
+//
 // Disabled if set to 0
 func (server *Server) WithAutoSave(interval time.Duration, file string) *Server {
 	server.AutoSaveInterval = interval
@@ -54,17 +58,21 @@ func (server *Server) WithPort(port int) *Server {
 }
 
 // Start starts the cache server, which includes the autosave
+//
+// This is a blocking function, therefore, you are expected to run this on a goroutine
 func (server *Server) Start() error {
 	if server.AutoSaveInterval != 0 {
+		err := server.loadAutoSaveFileIfExists()
+		if err != nil {
+			return fmt.Errorf("ran into the following error while attempting to load the auto save file in memory: %s", err.Error())
+		}
 		go server.autoSave()
 	}
 	if err := server.Cache.StartJanitor(); err != nil {
-		panic(err)
+		return err
 	}
 	address := fmt.Sprintf(":%d", server.Port)
-	server.startTime = time.Now()
-	log.Printf("Listening on %s", address)
-	err := redcon.ListenAndServe(address,
+	server.cacheServer = redcon.NewServer(address,
 		func(conn redcon.Conn, cmd redcon.Command) {
 			switch strings.ToUpper(string(cmd.Args[0])) {
 			case "GET":
@@ -114,17 +122,26 @@ func (server *Server) Start() error {
 			server.numberOfConnections -= 1
 		},
 	)
+	server.startTime = time.Now()
+	server.running = true
+	log.Printf("Listening on %s", address)
+	err := server.cacheServer.ListenAndServe()
+	server.running = false
 	server.Cache.StopJanitor()
 	if server.AutoSaveInterval != 0 {
 		log.Printf("Saving to %s before closing...", server.AutoSaveFile)
 		start := time.Now()
-		err := server.Cache.SaveToFile(server.AutoSaveFile)
-		if err != nil {
+		if err := server.Cache.SaveToFile(server.AutoSaveFile); err != nil {
 			log.Printf("error while autosaving: %s", err.Error())
 		}
 		log.Printf("Saved successfully in %s", time.Since(start))
 	}
 	return err
+}
+
+// Stop closes the Server
+func (server *Server) Stop() error {
+	return server.cacheServer.Close()
 }
 
 func (server *Server) get(cmd redcon.Command, conn redcon.Conn) {
@@ -408,10 +425,33 @@ func (server *Server) flushDb(_ redcon.Command, conn redcon.Conn) {
 	conn.WriteString("OK")
 }
 
-// autoSave automatically saves every AutoSaveInterval
+// loadAutoSaveFileIfExists loads the Cache with the entries present in the AutoSaveFile
+func (server *Server) loadAutoSaveFileIfExists() error {
+	numberOfEntriesEvicted, err := server.Cache.ReadFromFile(server.AutoSaveFile)
+	if err != nil {
+		if os.IsNotExist(err) {
+			log.Println("Server will start with an empty cache, because the specified auto save file doesn't exist")
+		} else {
+			return err
+		}
+	}
+	if numberOfEntriesEvicted > 0 {
+		log.Printf("%d keys had to be evicted after reading the file in order to respect the maximum cache size", numberOfEntriesEvicted)
+	}
+	if cacheSize := server.Cache.Count(); cacheSize > 0 {
+		log.Printf("%d keys loaded into memory from auto save file '%s'", cacheSize, server.AutoSaveFile)
+	}
+	return nil
+}
+
+// autoSave persists the cache to AutoSaveFile every AutoSaveInterval
 func (server *Server) autoSave() {
 	for {
 		time.Sleep(server.AutoSaveInterval)
+		if !server.running {
+			log.Println("terminating auto save process because server is no longer running")
+			break
+		}
 		err := server.Cache.SaveToFile(server.AutoSaveFile)
 		if err != nil {
 			log.Printf("error while autosaving: %s", err.Error())
