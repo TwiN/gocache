@@ -10,14 +10,21 @@ const (
 	Debug = false
 
 	// NoMaxSize means that the cache has no maximum number of entries in the cache
-	// Setting MaxSize to this value also means there will be no eviction
+	// Setting Cache.MaxSize to this value also means there will be no eviction
 	NoMaxSize = 0
+
+	// NoMaxMemoryUsage means that the cache has no maximum number of entries in the cache
+	NoMaxMemoryUsage = 0
 
 	// DefaultMaxSize is the max size set if no max size is specified
 	DefaultMaxSize = 100000
 
 	// NoExpiration is the value that must be used as TTL to specify that the given key should never expire
 	NoExpiration = -1
+
+	Kilobyte = 1024
+	Megabyte = 1024 * 1024
+	Gigabyte = 1024 * 1024 * 1024
 )
 
 var (
@@ -29,7 +36,13 @@ var (
 // Cache is the core struct of gocache which contains the data as well as all relevant configuration fields
 type Cache struct {
 	// MaxSize is the maximum amount of entries that can be in the cache at any given time
+	// By default, this is set to DefaultMaxSize
 	MaxSize int
+
+	// MaxMemoryUsage is the maximum amount of memory that can be taken up by the cache at any time
+	// By default, this is set to NoMaxMemoryUsage, meaning that the default behavior is to not evict
+	// based on maximum memory usage
+	MaxMemoryUsage int
 
 	// EvictionPolicy is the eviction policy
 	EvictionPolicy EvictionPolicy
@@ -44,6 +57,8 @@ type Cache struct {
 
 	// stopJanitor is the channel used to stop the janitor
 	stopJanitor chan bool
+
+	memoryUsage int
 }
 
 // NewCache creates a new Cache
@@ -65,6 +80,19 @@ func (cache *Cache) WithMaxSize(maxSize int) *Cache {
 		maxSize = NoMaxSize
 	}
 	cache.MaxSize = maxSize
+	return cache
+}
+
+// WithMaxMemoryUsage sets the maximum amount of memory that can be used by the cache at any given time
+//
+// NOTE: This is approximate.
+//
+// Setting this to NoMaxMemoryUsage will disable eviction by memory usage
+func (cache *Cache) WithMaxMemoryUsage(maxMemoryUsageInBytes int) *Cache {
+	if maxMemoryUsageInBytes < 0 {
+		maxMemoryUsageInBytes = NoMaxMemoryUsage
+	}
+	cache.MaxMemoryUsage = maxMemoryUsageInBytes
 	return cache
 }
 
@@ -105,8 +133,20 @@ func (cache *Cache) SetWithTTL(key string, value interface{}, ttl time.Duration)
 		}
 		cache.head = entry
 		cache.entries[key] = entry
+		if cache.MaxMemoryUsage != NoMaxMemoryUsage {
+			cache.memoryUsage += entry.SizeInBytes()
+		}
 	} else {
+		if cache.MaxMemoryUsage != NoMaxMemoryUsage {
+			// Substract the old entry from the cache's memoryUsage
+			cache.memoryUsage -= entry.SizeInBytes()
+		}
+		// Update existing entry's value
 		entry.Value = value
+		if cache.MaxMemoryUsage != NoMaxMemoryUsage {
+			// Add the memory usage of the new entry to the cache's memoryUsage
+			cache.memoryUsage += entry.SizeInBytes()
+		}
 		// Because we just updated the entry, we need to move it back to HEAD
 		cache.moveExistingEntryToHead(entry)
 	}
@@ -115,14 +155,21 @@ func (cache *Cache) SetWithTTL(key string, value interface{}, ttl time.Duration)
 	} else {
 		entry.Expiration = NoExpiration
 	}
-	// If the cache doesn't have a MaxSize, then there's no point checking if we need to evict
+	// If the cache doesn't have a MaxSize/MaxMemoryUsage, then there's no point checking if we need to evict
 	// an entry, so we'll just return now
-	if cache.MaxSize == NoMaxSize {
+	if cache.MaxSize == NoMaxSize && cache.MaxMemoryUsage == NoMaxMemoryUsage {
 		cache.mutex.Unlock()
 		return
 	}
-	if len(cache.entries) > cache.MaxSize {
+	// If there's a MaxSize and the cache has more entries than the MaxSize, evict
+	if cache.MaxSize != NoMaxSize && len(cache.entries) > cache.MaxSize {
 		cache.evict()
+	}
+	// If there's a MaxMemoryUsage and the memoryUsage is above the MaxMemoryUsage, evict
+	if cache.MaxMemoryUsage != NoMaxMemoryUsage && cache.memoryUsage > cache.MaxMemoryUsage {
+		for cache.memoryUsage > cache.MaxMemoryUsage && len(cache.entries) > 0 {
+			cache.evict()
+		}
 	}
 	cache.mutex.Unlock()
 }
@@ -235,6 +282,7 @@ func (cache *Cache) Count() int {
 func (cache *Cache) Clear() {
 	cache.mutex.Lock()
 	cache.entries = make(map[string]*Entry)
+	cache.memoryUsage = 0
 	cache.head = nil
 	cache.tail = nil
 	cache.mutex.Unlock()
@@ -291,6 +339,9 @@ func (cache *Cache) get(key string) (*Entry, bool) {
 func (cache *Cache) delete(key string) bool {
 	entry, ok := cache.entries[key]
 	if ok {
+		if cache.MaxMemoryUsage != NoMaxMemoryUsage {
+			cache.memoryUsage -= entry.SizeInBytes()
+		}
 		cache.removeExistingEntryReferences(entry)
 		delete(cache.entries, key)
 	}
@@ -343,6 +394,9 @@ func (cache *Cache) evict() {
 		oldTail := cache.tail
 		cache.removeExistingEntryReferences(oldTail)
 		delete(cache.entries, oldTail.Key)
+		if cache.MaxMemoryUsage != NoMaxMemoryUsage {
+			cache.memoryUsage -= oldTail.SizeInBytes()
+		}
 		cache.Stats.EvictedKeys++
 	}
 }
