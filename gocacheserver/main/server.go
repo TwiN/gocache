@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/TwinProduction/gocache"
 	"github.com/TwinProduction/gocache/gocacheserver"
 	"log"
@@ -10,6 +11,9 @@ import (
 )
 
 func main() {
+	fmt.Println("=============================================")
+	fmt.Println("= https://github.com/TwinProduction/gocache =")
+	fmt.Println("=============================================")
 	port, _ := strconv.Atoi(os.Getenv("PORT"))
 	if port == 0 {
 		port = gocacheserver.DefaultServerPort

@@ -300,7 +300,7 @@ docker run --name gocache-server -p 6379:6379 twinproduction/gocache-server:v0.1
 
 ### Summary
 - **Set**: Both map and gocache have the same performance.
-- **Get**: The map is slightly faster than gocache. 
+- **Get**: Map is faster than gocache.
 
 This is because gocache keeps track of the head and the tail for eviction and expiration/TTL. 
 
@@ -319,66 +319,39 @@ but if you're looking into using a library like gocache, odds are, you want more
 | mem    | 32G DDR4 |
 
 ```
-BenchmarkMap_Get
-BenchmarkMap_Get-8                                                       46103308	   26.5 ns/op
-BenchmarkMap_SetSmallValue
-BenchmarkMap_SetSmallValue-8                                              3691896	   390 ns/op
-BenchmarkMap_SetMediumValue
-BenchmarkMap_SetMediumValue-8                                             3883486	   389 ns/op
-BenchmarkMap_SetLargeValue
-BenchmarkMap_SetLargeValue-8                                              3930363	   390 ns/op
-BenchmarkCache_Get
-BenchmarkCache_Get-8                                                     27883308	   45.2 ns/op
-BenchmarkCache_SetSmallValue
-BenchmarkCache_SetSmallValue-8                                            2946333	   398 ns/op
-BenchmarkCache_SetMediumValue
-BenchmarkCache_SetMediumValue-8                                           2912028	   388 ns/op
-BenchmarkCache_SetLargeValue
-BenchmarkCache_SetLargeValue-8                                            2970049	   385 ns/op
-BenchmarkCache_SetSmallValueWithMaxSize10
-BenchmarkCache_SetSmallValueWithMaxSize10-8                               5278617	   229 ns/op
-BenchmarkCache_SetMediumValueWithMaxSize10
-BenchmarkCache_SetMediumValueWithMaxSize10-8                              5224278	   229 ns/op
-BenchmarkCache_SetLargeValueWithMaxSize10
-BenchmarkCache_SetLargeValueWithMaxSize10-8                               5226096	   231 ns/op
-BenchmarkCache_SetSmallValueWithMaxSize1000
-BenchmarkCache_SetSmallValueWithMaxSize1000-8                             5018584	   239 ns/op
-BenchmarkCache_SetMediumValueWithMaxSize1000
-BenchmarkCache_SetMediumValueWithMaxSize1000-8                            5021300	   240 ns/op
-BenchmarkCache_SetLargeValueWithMaxSize1000
-BenchmarkCache_SetLargeValueWithMaxSize1000-8                             5037594	   240 ns/op
-BenchmarkCache_SetSmallValueWithMaxSize100000
-BenchmarkCache_SetSmallValueWithMaxSize100000-8                           3683408	   322 ns/op
-BenchmarkCache_SetMediumValueWithMaxSize100000
-BenchmarkCache_SetMediumValueWithMaxSize100000-8                          3783688	   320 ns/op
-BenchmarkCache_SetLargeValueWithMaxSize100000
-BenchmarkCache_SetLargeValueWithMaxSize100000-8                           3647302	   323 ns/op
-BenchmarkCache_SetSmallValueWithMaxSize100000AndLRU
-BenchmarkCache_SetSmallValueWithMaxSize100000AndLRU-8                     3749640	   321 ns/op
-BenchmarkCache_SetMediumValueWithMaxSize100000AndLRU
-BenchmarkCache_SetMediumValueWithMaxSize100000AndLRU-8                    3796221	   322 ns/op
-BenchmarkCache_SetLargeValueWithMaxSize100000AndLRU
-BenchmarkCache_SetLargeValueWithMaxSize100000AndLRU-8                     3737858	   323 ns/op
-BenchmarkCache_GetAndSetConcurrently
-BenchmarkCache_GetAndSetConcurrently-8                                    1692525	   703 ns/op
-BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndLRU
-BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndLRU-8                2582576	   491 ns/op
-BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndFIFO
-BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndFIFO-8               2602639	   477 ns/op
-BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndNoEvictionAndLRU
-BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndNoEvictionAndLRU-8   2177972	   579 ns/op
-BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndNoEvictionAndFIFO
-BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndNoEvictionAndFIFO-8  2222224	   569 ns/op
-BenchmarkCache_GetAndSetConcurrentlyWithFrequentEvictionsAndLRU
-BenchmarkCache_GetAndSetConcurrentlyWithFrequentEvictionsAndLRU-8         3738321	   323 ns/op
-BenchmarkCache_GetAndSetConcurrentlyWithFrequentEvictionsAndFIFO
-BenchmarkCache_GetAndSetConcurrentlyWithFrequentEvictionsAndFIFO-8        3669382	   323 ns/op
-BenchmarkCache_GetConcurrentlyWithLRU
-BenchmarkCache_GetConcurrentlyWithLRU-8                                   1539992	   750 ns/op
-BenchmarkCache_GetConcurrentlyWithFIFO
-BenchmarkCache_GetConcurrentlyWithFIFO-8                                  1550388	   744 ns/op
-BenchmarkCache_GetKeysThatDoNotExistConcurrently
-BenchmarkCache_GetKeysThatDoNotExistConcurrently-8                       10529446	   116 ns/op
+BenchmarkMap_Get-8                                                         	47943618	       26.6 ns/op
+BenchmarkMap_SetSmallValue-8                                               	 3800810	       394 ns/op
+BenchmarkMap_SetMediumValue-8                                              	 3904794	       400 ns/op
+BenchmarkMap_SetLargeValue-8                                               	 3934033	       383 ns/op
+BenchmarkCache_Get-8                                                       	27254640	       45.0 ns/op
+BenchmarkCache_SetSmallValue-8                                             	 2991620	       401 ns/op
+BenchmarkCache_SetMediumValue-8                                            	 3051128	       381 ns/op
+BenchmarkCache_SetLargeValue-8                                             	 2995904	       382 ns/op
+BenchmarkCache_SetSmallValueWhenUsingMaxMemoryUsage-8                      	 2752288	       428 ns/op
+BenchmarkCache_SetMediumValueWhenUsingMaxMemoryUsage-8                     	 2744899	       436 ns/op
+BenchmarkCache_SetLargeValueWhenUsingMaxMemoryUsage-8                      	 2756816	       430 ns/op
+BenchmarkCache_SetSmallValueWithMaxSize10-8                                	 5308886	       226 ns/op
+BenchmarkCache_SetMediumValueWithMaxSize10-8                               	 5304098	       226 ns/op
+BenchmarkCache_SetLargeValueWithMaxSize10-8                                	 5277986	       227 ns/op
+BenchmarkCache_SetSmallValueWithMaxSize1000-8                              	 5130580	       236 ns/op
+BenchmarkCache_SetMediumValueWithMaxSize1000-8                             	 5102404	       237 ns/op
+BenchmarkCache_SetLargeValueWithMaxSize1000-8                              	 5084695	       237 ns/op
+BenchmarkCache_SetSmallValueWithMaxSize100000-8                            	 3858066	       315 ns/op
+BenchmarkCache_SetMediumValueWithMaxSize100000-8                           	 3909277	       315 ns/op
+BenchmarkCache_SetLargeValueWithMaxSize100000-8                            	 3870913	       315 ns/op
+BenchmarkCache_SetSmallValueWithMaxSize100000AndLRU-8                      	 3856012	       316 ns/op
+BenchmarkCache_SetMediumValueWithMaxSize100000AndLRU-8                     	 3809518	       316 ns/op
+BenchmarkCache_SetLargeValueWithMaxSize100000AndLRU-8                      	 3834754	       318 ns/op
+BenchmarkCache_GetAndSetConcurrently-8                                     	 1779258	       672 ns/op
+BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndLRU-8                 	 2569590	       487 ns/op
+BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndFIFO-8                	 2608369	       474 ns/op
+BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndNoEvictionAndLRU-8    	 2185795	       582 ns/op
+BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndNoEvictionAndFIFO-8   	 2238811	       568 ns/op
+BenchmarkCache_GetAndSetConcurrentlyWithFrequentEvictionsAndLRU-8          	 3726714	       320 ns/op
+BenchmarkCache_GetAndSetConcurrentlyWithFrequentEvictionsAndFIFO-8         	 3682808	       325 ns/op
+BenchmarkCache_GetConcurrentlyWithLRU-8                                    	 1536589	       739 ns/op
+BenchmarkCache_GetConcurrentlyWithFIFO-8                                   	 1558513	       737 ns/op
+BenchmarkCache_GetKeysThatDoNotExistConcurrently-8                         	10173138	       119 ns/op
 ```
 
 
