@@ -38,7 +38,7 @@ func main() {
 	cache := gocache.NewCache().WithEvictionPolicy(gocache.LeastRecentlyUsed).WithMaxSize(maxCacheSize).WithMaxMemoryUsage(maxMemoryUsage)
 	server := gocacheserver.NewServer(cache).WithPort(port)
 	if autoSave {
-		server = server.WithAutoSave(1*time.Minute, "/app/data/gocache.bak")
+		server = server.WithAutoSave(10*time.Minute, "/app/data/gocache.bak")
 	}
 	err := server.Start()
 	if err != nil {
