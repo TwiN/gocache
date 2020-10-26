@@ -36,7 +36,7 @@ func (entry Entry) Expired() bool {
 }
 
 func (entry *Entry) SizeInBytes() int {
-	return toBytes(entry.Key) + toBytes(entry.Value)
+	return toBytes(entry.Key) + toBytes(entry.Value) + 32
 }
 
 func toBytes(value interface{}) int {
