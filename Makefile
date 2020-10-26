@@ -1,5 +1,6 @@
 db: docker-build
 dr: docker-run
+drmem: docker-run-max-memory-usage
 
 docker-build:
 	docker build --tag=gocache-server .
