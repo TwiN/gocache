@@ -113,6 +113,11 @@ func (cache *Cache) WithEvictionPolicy(policy EvictionPolicy) *Cache {
 }
 
 // NewCache creates a new Cache
+//
+// Should be used in conjunction with Cache.WithMaxSize, Cache.WithMaxMemoryUsage and/or Cache.WithEvictionPolicy
+//
+//     gocache.NewCache().WithMaxSize(10000).WithEvictionPolicy(gocache.LeastRecentlyUsed)
+//
 func NewCache() *Cache {
 	return &Cache{
 		maxSize:        DefaultMaxSize,
