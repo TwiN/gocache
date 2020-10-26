@@ -14,7 +14,7 @@ start-redis:
 	docker run -p 6379:6379 --name redis -d redis
 
 redis-benchmark:
-	redis-benchmark -p 6667 -t set,get -n 10000000 -r 200000 -q -P 512 -c 512
+	redis-benchmark -p 6666 -t set,get -n 10000000 -r 200000 -q -P 512 -c 512
 
 memtier-benchmark:
 	memtier_benchmark --port 6666 --hide-histogram --key-maximum 100000 --ratio 1:1 --expiry-range 1-100 --key-pattern R:R --randomize -n 100000
