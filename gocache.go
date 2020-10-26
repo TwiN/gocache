@@ -134,7 +134,7 @@ func (cache *Cache) Set(key string, value interface{}) {
 	cache.SetWithTTL(key, value, NoExpiration)
 }
 
-// SetWithTTL creates or updates a key with a given value and sets an expiration time (-1 is no expiration)
+// SetWithTTL creates or updates a key with a given value and sets an expiration time (-1 is NoExpiration)
 func (cache *Cache) SetWithTTL(key string, value interface{}, ttl time.Duration) {
 	cache.mutex.Lock()
 	entry, ok := cache.get(key)
@@ -215,8 +215,10 @@ func (cache *Cache) Get(key string) (interface{}, bool) {
 	entry, ok := cache.get(key)
 	if !ok {
 		cache.mutex.Unlock()
+		cache.stats.Misses++
 		return nil, false
 	}
+	cache.stats.Hits++
 	if entry.Expired() {
 		cache.delete(key)
 		cache.mutex.Unlock()
