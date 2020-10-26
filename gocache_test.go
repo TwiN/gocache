@@ -760,11 +760,11 @@ func TestCache_WithMaxMemoryUsageWhenAddingAnEntryThatCausesMoreThanOneEviction(
 func TestCache_memoryUsageAfterSet10000AndDelete5000(t *testing.T) {
 	const ValueSize = 64
 	cache := NewCache().WithMaxSize(10000).WithMaxMemoryUsage(Gigabyte)
-	for i := 0; i < cache.MaxSize; i++ {
+	for i := 0; i < cache.maxSize; i++ {
 		cache.Set(fmt.Sprintf("%05d", i), strings.Repeat("0", ValueSize))
 	}
 	memoryUsageBeforeDeleting := cache.memoryUsage
-	for i := 0; i < cache.MaxSize/2; i++ {
+	for i := 0; i < cache.maxSize/2; i++ {
 		key := fmt.Sprintf("%05d", i)
 		cache.Delete(key)
 	}

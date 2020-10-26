@@ -70,7 +70,7 @@ func (cache *Cache) StartJanitor() error {
 							// next reference before we delete it
 							next = current.next
 							cache.delete(current.Key)
-							cache.Stats.ExpiredKeys++
+							cache.stats.ExpiredKeys++
 						}
 						if current == cache.head {
 							lastTraversedNode = nil

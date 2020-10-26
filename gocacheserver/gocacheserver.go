@@ -407,8 +407,8 @@ func (server *Server) info(cmd redcon.Command, conn redcon.Conn) {
 	}
 	if section == "ALL" || section == "STATS" {
 		buffer.WriteString("# Stats\n")
-		buffer.WriteString(fmt.Sprintf("evicted_keys:%d\n", server.Cache.Stats.EvictedKeys))
-		buffer.WriteString(fmt.Sprintf("expired_keys:%d\n", server.Cache.Stats.ExpiredKeys))
+		buffer.WriteString(fmt.Sprintf("evicted_keys:%d\n", server.Cache.Stats().EvictedKeys))
+		buffer.WriteString(fmt.Sprintf("expired_keys:%d\n", server.Cache.Stats().ExpiredKeys))
 		buffer.WriteString(fmt.Sprintf("current_keys:%d\n", server.Cache.Count()))
 		buffer.WriteString("\n")
 	}

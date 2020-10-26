@@ -28,11 +28,11 @@ func (cache *Cache) SaveToFile(path string) error {
 
 // ReadFromFile populates the cache using a file created using cache.SaveToFile(path)
 //
-// Note that if the number of entries retrieved from the file exceed the configured MaxSize,
+// Note that if the number of entries retrieved from the file exceed the configured maxSize,
 // the extra entries will be automatically evicted according to the EvictionPolicy configured.
 // This function returns the number of entries evicted, and because this function only reads
 // from a file and does not modify it, you can safely retry this function after configuring
-// the cache with the appropriate MaxSize, should you desire to.
+// the cache with the appropriate maxSize, should you desire to.
 func (cache *Cache) ReadFromFile(path string) (int, error) {
 	file, err := os.OpenFile(path, os.O_RDONLY, os.ModePerm)
 	if err != nil {
@@ -68,28 +68,28 @@ func (cache *Cache) ReadFromFile(path string) (int, error) {
 			cache.head = current
 		}
 		previous = entries[i]
-		if cache.MaxMemoryUsage != NoMaxMemoryUsage {
+		if cache.maxMemoryUsage != NoMaxMemoryUsage {
 			cache.memoryUsage += current.SizeInBytes()
 		}
 	}
-	// If the cache doesn't have a MaxSize/MaxMemoryUsage, then there's no point checking if we need to evict
+	// If the cache doesn't have a maxSize/maxMemoryUsage, then there's no point checking if we need to evict
 	// an entry, so we'll just return now
-	if cache.MaxSize == NoMaxSize && cache.MaxMemoryUsage == NoMaxMemoryUsage {
+	if cache.maxSize == NoMaxSize && cache.maxMemoryUsage == NoMaxMemoryUsage {
 		cache.mutex.Unlock()
 		return 0, nil
 	}
 	// Evict what needs to be evicted
 	numberOfEvictions := 0
-	// If there's a MaxSize and the cache has more entries than the MaxSize, evict
-	if cache.MaxSize != NoMaxSize && len(cache.entries) > cache.MaxSize {
-		for len(cache.entries) > cache.MaxSize {
+	// If there's a maxSize and the cache has more entries than the maxSize, evict
+	if cache.maxSize != NoMaxSize && len(cache.entries) > cache.maxSize {
+		for len(cache.entries) > cache.maxSize {
 			numberOfEvictions++
 			cache.evict()
 		}
 	}
-	// If there's a MaxMemoryUsage and the memoryUsage is above the MaxMemoryUsage, evict
-	if cache.MaxMemoryUsage != NoMaxMemoryUsage && cache.memoryUsage > cache.MaxMemoryUsage {
-		for cache.memoryUsage > cache.MaxMemoryUsage && len(cache.entries) > 0 {
+	// If there's a maxMemoryUsage and the memoryUsage is above the maxMemoryUsage, evict
+	if cache.maxMemoryUsage != NoMaxMemoryUsage && cache.memoryUsage > cache.maxMemoryUsage {
+		for cache.memoryUsage > cache.maxMemoryUsage && len(cache.entries) > 0 {
 			numberOfEvictions++
 			cache.evict()
 		}

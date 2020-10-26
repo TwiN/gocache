@@ -65,7 +65,7 @@ func TestCache_ReadFromFile(t *testing.T) {
 		t.Error("expected 3 entries to have been evicted, but got", numberOfEntriesEvicted)
 	}
 	if cache.Count() != 7 {
-		t.Error("expected newCache to have 7 entries since its MaxSize is 7, but got", cache.Count())
+		t.Error("expected newCache to have 7 entries since its maxSize is 7, but got", cache.Count())
 	}
 	// Make sure all entries have the right values and can still be GETable
 	for key, value := range cache.entries {
