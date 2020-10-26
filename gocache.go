@@ -82,6 +82,12 @@ func (cache *Cache) Stats() *Statistics {
 	return cache.stats
 }
 
+// MemoryUsage returns the current memory usage of the cache's dataset in bytes
+// If MaxMemoryUsage is set to NoMaxMemoryUsage, this will return 0
+func (cache *Cache) MemoryUsage() int {
+	return cache.memoryUsage
+}
+
 // WithMaxSize sets the maximum amount of entries that can be in the cache at any given time
 // A maxSize of 0 or less means infinite
 func (cache *Cache) WithMaxSize(maxSize int) *Cache {

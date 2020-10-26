@@ -414,6 +414,12 @@ func (server *Server) info(cmd redcon.Command, conn redcon.Conn) {
 		buffer.WriteString(fmt.Sprintf("keyspace_misses:%d\n", server.Cache.Stats().Misses))
 		buffer.WriteString("\n")
 	}
+	if section == "ALL" || section == "MEMORY" {
+		buffer.WriteString("# Memory\n")
+		buffer.WriteString(fmt.Sprintf("used_memory_dataset:%d\n", server.Cache.MemoryUsage()))
+		buffer.WriteString(fmt.Sprintf("used_memory_dataset_human:%dM\n", server.Cache.MemoryUsage()/1024/1024))
+		buffer.WriteString("\n")
+	}
 	if section == "ALL" || section == "REPLICATION" {
 		buffer.WriteString("# Replication\n")
 		buffer.WriteString("role:master\n")
