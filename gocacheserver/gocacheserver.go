@@ -7,6 +7,7 @@ import (
 	"github.com/tidwall/redcon"
 	"log"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -415,7 +416,11 @@ func (server *Server) info(cmd redcon.Command, conn redcon.Conn) {
 		buffer.WriteString("\n")
 	}
 	if section == "ALL" || section == "MEMORY" {
+		var m runtime.MemStats
+		runtime.ReadMemStats(&m)
 		buffer.WriteString("# Memory\n")
+		buffer.WriteString(fmt.Sprintf("used_memory:%d\n", m.HeapSys))
+		buffer.WriteString(fmt.Sprintf("used_memory_human:%dM\n", m.HeapSys/1024/1024))
 		buffer.WriteString(fmt.Sprintf("used_memory_dataset:%d\n", server.Cache.MemoryUsage()))
 		buffer.WriteString(fmt.Sprintf("used_memory_dataset_human:%dM\n", server.Cache.MemoryUsage()/1024/1024))
 		buffer.WriteString("\n")
