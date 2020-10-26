@@ -20,6 +20,7 @@ func BenchmarkMap_SetSmallValue(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		m[strconv.Itoa(n)] = value
 	}
+	b.ReportAllocs()
 }
 
 func BenchmarkMap_SetMediumValue(b *testing.B) {
@@ -73,8 +74,9 @@ func BenchmarkCache_SetSmallValue(b *testing.B) {
 	value := "a"
 	cache := NewCache().WithMaxSize(NoMaxSize).WithMaxMemoryUsage(NoMaxMemoryUsage)
 	for n := 0; n < b.N; n++ {
-		cache.Set(strconv.Itoa(n), value)
+		cache.SetWithTTL(strconv.Itoa(n), value, 0)
 	}
+	b.ReportAllocs()
 }
 
 func BenchmarkCache_SetMediumValue(b *testing.B) {
@@ -88,6 +90,37 @@ func BenchmarkCache_SetMediumValue(b *testing.B) {
 func BenchmarkCache_SetLargeValue(b *testing.B) {
 	value := strings.Repeat("a", 1024*100)
 	cache := NewCache().WithMaxSize(NoMaxSize).WithMaxMemoryUsage(NoMaxMemoryUsage)
+	for n := 0; n < b.N; n++ {
+		cache.Set(strconv.Itoa(n), value)
+	}
+}
+
+func BenchmarkCache_GetUsingLRU(b *testing.B) {
+	cache := NewCache().WithMaxSize(NoMaxSize).WithMaxMemoryUsage(NoMaxMemoryUsage).WithEvictionPolicy(LeastRecentlyUsed)
+	for n := 0; n < b.N; n++ {
+		cache.Get(strconv.Itoa(n))
+	}
+}
+
+func BenchmarkCache_SetSmallValueUsingLRU(b *testing.B) {
+	value := "a"
+	cache := NewCache().WithMaxSize(NoMaxSize).WithMaxMemoryUsage(NoMaxMemoryUsage).WithEvictionPolicy(LeastRecentlyUsed)
+	for n := 0; n < b.N; n++ {
+		cache.Set(strconv.Itoa(n), value)
+	}
+}
+
+func BenchmarkCache_SetMediumValueUsingLRU(b *testing.B) {
+	value := strings.Repeat("a", 1024)
+	cache := NewCache().WithMaxSize(NoMaxSize).WithMaxMemoryUsage(NoMaxMemoryUsage).WithEvictionPolicy(LeastRecentlyUsed)
+	for n := 0; n < b.N; n++ {
+		cache.Set(strconv.Itoa(n), value)
+	}
+}
+
+func BenchmarkCache_SetLargeValueUsingLRU(b *testing.B) {
+	value := strings.Repeat("a", 1024*100)
+	cache := NewCache().WithMaxSize(NoMaxSize).WithMaxMemoryUsage(NoMaxMemoryUsage).WithEvictionPolicy(LeastRecentlyUsed)
 	for n := 0; n < b.N; n++ {
 		cache.Set(strconv.Itoa(n), value)
 	}
@@ -352,6 +385,7 @@ func BenchmarkCache_GetConcurrentlyWithFIFO(b *testing.B) {
 			}
 		}
 	})
+	b.ReportAllocs()
 }
 
 func BenchmarkCache_GetKeysThatDoNotExistConcurrently(b *testing.B) {
