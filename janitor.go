@@ -119,7 +119,7 @@ func (cache *Cache) StartJanitor() error {
 			var m runtime.MemStats
 			for {
 				runtime.ReadMemStats(&m)
-				log.Printf("Alloc=%vMB; HeapReleased=%vMB; Sys=%vMB; HeapInUse=%vMB; HeapObjects=%v; HeapObjectsFreed=%v; GC=%v\n", m.Alloc/1024/1024, m.HeapReleased/1024/1024, m.Sys/1024/1024, m.HeapInuse/1024/1024, m.HeapObjects, m.Frees, m.NumGC)
+				log.Printf("Alloc=%vMB; HeapReleased=%vMB; Sys=%vMB; HeapInUse=%vMB; HeapObjects=%v; HeapObjectsFreed=%v; GC=%v; cache.memoryUsage=%vMB; cacheSize=%d\n", m.Alloc/1024/1024, m.HeapReleased/1024/1024, m.Sys/1024/1024, m.HeapInuse/1024/1024, m.HeapObjects, m.Frees, m.NumGC, cache.memoryUsage/1024/1024, cache.Count())
 				time.Sleep(3 * time.Second)
 			}
 		}()

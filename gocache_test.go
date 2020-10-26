@@ -1,9 +1,9 @@
 package gocache
 
 import (
+	"bytes"
 	"fmt"
-	"os"
-	"strconv"
+	"strings"
 	"testing"
 	"time"
 )
@@ -129,6 +129,112 @@ func TestCache_SetDifferentTypesOfData(t *testing.T) {
 	}
 	if value.(struct{ Test string }) != struct{ Test string }{Test: "test"} {
 		t.Errorf("expected: %s, but got: %s", "newvalue", value)
+	}
+}
+
+func TestCache_SetGetIntValue(t *testing.T) {
+	cache := NewCache().WithMaxSize(10)
+	cache.Set("key", 1)
+	value, ok := cache.Get("key")
+	if !ok {
+		t.Error("expected key to exist")
+	}
+	if value != 1 {
+		t.Errorf("expected: %v, but got: %v", 1, value)
+	}
+	cache.Set("key", 2.1)
+	value, ok = cache.Get("key")
+	if !ok {
+		t.Error("expected key to exist")
+	}
+	if value != 2.1 {
+		t.Errorf("expected: %v, but got: %v", 2.1, value)
+	}
+}
+
+func TestCache_SetGetBool(t *testing.T) {
+	cache := NewCache().WithMaxSize(10)
+	cache.Set("key", true)
+	value, ok := cache.Get("key")
+	if !ok {
+		t.Error("expected key to exist")
+	}
+	if value != true {
+		t.Errorf("expected: %v, but got: %v", true, value)
+	}
+}
+
+func TestCache_SetGetByteSlice(t *testing.T) {
+	cache := NewCache().WithMaxSize(10)
+	cache.Set("key", []byte("hey"))
+	value, ok := cache.Get("key")
+	if !ok {
+		t.Error("expected key to exist")
+	}
+	if bytes.Compare(value.([]byte), []byte("hey")) != 0 {
+		t.Errorf("expected: %v, but got: %v", []byte("hey"), value)
+	}
+}
+
+func TestCache_SetGetStringSlice(t *testing.T) {
+	cache := NewCache().WithMaxSize(10)
+	cache.Set("key", []string{"john", "doe"})
+	value, ok := cache.Get("key")
+	if !ok {
+		t.Error("expected key to exist")
+	}
+	if value.([]string)[0] != "john" {
+		t.Errorf("expected: %v, but got: %v", "john", value)
+	}
+	if value.([]string)[1] != "doe" {
+		t.Errorf("expected: %v, but got: %v", "doe", value)
+	}
+}
+
+func TestCache_SetGetStruct(t *testing.T) {
+	cache := NewCache().WithMaxSize(10)
+	type Custom struct {
+		Int     int
+		Uint    uint
+		Float32 float32
+		String  string
+		Strings []string
+		Nested  struct {
+			String string
+		}
+	}
+	cache.Set("key", Custom{
+		Int:     111,
+		Uint:    222,
+		Float32: 123.456,
+		String:  "hello",
+		Strings: []string{"s1", "s2"},
+		Nested:  struct{ String string }{String: "nested field"},
+	})
+	value, ok := cache.Get("key")
+	if !ok {
+		t.Error("expected key to exist")
+	}
+	if ExpectedValue := 111; value.(Custom).Int != ExpectedValue {
+		t.Errorf("expected: %v, but got: %v", ExpectedValue, value)
+	}
+	if ExpectedValue := uint(222); value.(Custom).Uint != ExpectedValue {
+		t.Errorf("expected: %v, but got: %v", ExpectedValue, value)
+	}
+	if ExpectedValue := float32(123.456); value.(Custom).Float32 != ExpectedValue {
+		t.Errorf("expected: %v, but got: %v", ExpectedValue, value)
+	}
+	if ExpectedValue := "hello"; value.(Custom).String != ExpectedValue {
+		t.Errorf("expected: %v, but got: %v", ExpectedValue, value)
+	}
+	if ExpectedValue := "s1"; value.(Custom).Strings[0] != ExpectedValue {
+		t.Errorf("expected: %v, but got: %v", ExpectedValue, value)
+	}
+	if ExpectedValue := "s2"; value.(Custom).Strings[1] != ExpectedValue {
+		t.Errorf("expected: %v, but got: %v", ExpectedValue, value)
+	}
+	if ExpectedValue := "nested field"; value.(Custom).Nested.String != ExpectedValue {
+		t.Errorf("expected: %v, but got: %v", ExpectedValue, value)
 	}
 }
 
@@ -475,9 +581,9 @@ func TestCache_Delete(t *testing.T) {
 		t.Error("cache head should have been nil")
 	}
 
-	cache.Set("1", []byte("1"))
-	cache.Set("2", []byte("2"))
-	cache.Set("3", []byte("3"))
+	cache.Set("1", "hey")
+	cache.Set("2", []byte("sup"))
+	cache.Set("3", 123456)
 
 	// (tail) 1 - 2 - 3 (head)
 	if cache.tail.Key != "1" {
@@ -595,80 +701,21 @@ func TestCache_Expire(t *testing.T) {
 	}
 }
 
-func TestCache_SaveToFile(t *testing.T) {
-	defer os.Remove(TestCacheFile)
-	cache := NewCache()
-	for n := 0; n < 10; n++ {
-		cache.Set(strconv.Itoa(n), fmt.Sprintf("v%d", n))
-		// To make sure that two entries don't get the exact same timestamp, as that might mess up the order
-		time.Sleep(time.Nanosecond)
+func TestCache_Clear(t *testing.T) {
+	cache := NewCache().WithMaxSize(10)
+	cache.Set("k1", "v1")
+	cache.Set("k2", "v2")
+	cache.Set("k3", "v3")
+	if cache.Count() != 3 {
+		t.Error("expected cache size to be 3, got", cache.Count())
 	}
-	err := cache.SaveToFile(TestCacheFile)
-	if err != nil {
-		t.Fatal("shouldn't have returned an error, but got:", err.Error())
+	cache.Clear()
+	if cache.Count() != 0 {
+		t.Error("expected cache to be empty")
 	}
-	newCache := NewCache()
-	numberOfEntriesEvicted, err := newCache.ReadFromFile(TestCacheFile)
-	if err != nil {
-		t.Fatal("shouldn't have returned an error, but got:", err.Error())
+	if cache.memoryUsage != 0 {
+		t.Error("expected cache.memoryUsage to be 0")
 	}
-	if numberOfEntriesEvicted != 0 {
-		t.Error("expected 0 entries to have been evicted, but got", numberOfEntriesEvicted)
-	}
-	if newCache.Count() != 10 {
-		t.Error("expected newCache to have 10 entries, but got", newCache.Count())
-	}
-	if cache.head.Key != newCache.head.Key {
-		t.Errorf("head key should've been %s, but was %s", cache.head.Key, newCache.head.Key)
-	}
-	if cache.tail.Key != newCache.tail.Key {
-		t.Errorf("tail key should've been %s, but was %s", cache.tail.Key, newCache.tail.Key)
-	}
-	if cache.head.previous.Key != newCache.head.previous.Key {
-		t.Errorf("head's previous key should've been %s, but was %s", cache.head.previous.Key, newCache.head.previous.Key)
-	}
-	if cache.tail.next.Key != newCache.tail.next.Key {
-		t.Errorf("tail's next key should've been %s, but was %s", cache.tail.next.Key, newCache.tail.next.Key)
-	}
-}
-
-func TestCache_ReadFromFile(t *testing.T) {
-	defer os.Remove(TestCacheFile)
-	cache := NewCache()
-	for n := 0; n < 10; n++ {
-		cache.Set(strconv.Itoa(n), fmt.Sprintf("v%d", n))
-		time.Sleep(time.Nanosecond)
-	}
-	err := cache.SaveToFile(TestCacheFile)
-	if err != nil {
-		panic(err)
-	}
-	newCache := cache.WithMaxSize(7)
-	numberOfEntriesEvicted, err := newCache.ReadFromFile(TestCacheFile)
-	if err != nil {
-		panic(err)
-	}
-	if numberOfEntriesEvicted != 3 {
-		t.Error("expected 3 entries to have been evicted, but got", numberOfEntriesEvicted)
-	}
-	if newCache.Count() != 7 {
-		t.Error("expected newCache to have 7 entries since its MaxSize is 7, but got", newCache.Count())
-	}
-	// Make sure all entries have the right values and can still be GETable
-	for key, value := range newCache.entries {
-		expectedValue := fmt.Sprintf("v%s", key)
-		if value.Value != expectedValue {
-			t.Errorf("key %s should've had value '%s', but had '%s' instead", key, expectedValue, value.Value)
-		}
-		valueFromCacheGet, _ := newCache.Get(key)
-		if valueFromCacheGet != expectedValue {
-			t.Errorf("key %s should've had value '%s', but had '%s' instead", key, expectedValue, value.Value)
-		}
-	}
-	// Make sure eviction still works
-	newCache.evict()
-	// Make sure we can create new entries
-	newCache.Set("eviction-test", 1)
 }
 
 func TestCache_StartJanitor(t *testing.T) {
@@ -685,5 +732,101 @@ func TestCache_StartJanitor(t *testing.T) {
 	time.Sleep(JanitorMinShiftBackOff * 2)
 	if cacheSize := cache.Count(); cacheSize != 0 {
 		t.Errorf("expected cacheSize to be 0, but was %d", cacheSize)
+	}
+}
+
+func TestCache_WithMaxMemoryUsage(t *testing.T) {
+	const ValueSize = Kilobyte
+	cache := NewCache().WithMaxSize(0).WithMaxMemoryUsage(Kilobyte * 64)
+	for i := 0; i < 100; i++ {
+		cache.Set(fmt.Sprintf("%d", i), strings.Repeat("0", ValueSize))
+	}
+	if cache.memoryUsage/1024 < 63 || cache.memoryUsage/1024 > 65 {
+		t.Error("expected memoryUsage to be between 63KB and 64KB")
+	}
+}
+
+func TestCache_WithMaxMemoryUsageWhenAddingAnEntryThatCausesMoreThanOneEviction(t *testing.T) {
+	const ValueSize = Kilobyte
+	cache := NewCache().WithMaxSize(0).WithMaxMemoryUsage(64 * Kilobyte)
+	for i := 0; i < 100; i++ {
+		cache.Set(fmt.Sprintf("%d", i), strings.Repeat("0", ValueSize))
+	}
+	if cache.memoryUsage/1024 < 63 || cache.memoryUsage/1024 > 65 {
+		t.Error("expected memoryUsage to be between 63KB and 64KB")
+	}
+}
+
+func TestCache_memoryUsageAfterSet10000AndDelete5000(t *testing.T) {
+	const ValueSize = 64
+	cache := NewCache().WithMaxSize(10000).WithMaxMemoryUsage(Gigabyte)
+	for i := 0; i < cache.MaxSize; i++ {
+		cache.Set(fmt.Sprintf("%05d", i), strings.Repeat("0", ValueSize))
+	}
+	memoryUsageBeforeDeleting := cache.memoryUsage
+	for i := 0; i < cache.MaxSize/2; i++ {
+		key := fmt.Sprintf("%05d", i)
+		cache.Delete(key)
+	}
+	memoryUsageRatio := float32(cache.memoryUsage) / float32(memoryUsageBeforeDeleting)
+	if memoryUsageRatio != 0.5 {
+		t.Error("Since half of the keys were deleted, the memoryUsage should've been half of what the memory usage was before beginning deletion")
+	}
+}
+
+func TestCache_memoryUsageIsReliable(t *testing.T) {
+	cache := NewCache().WithMaxMemoryUsage(Megabyte)
+	previousCacheMemoryUsage := cache.memoryUsage
+	if previousCacheMemoryUsage != 0 {
+		t.Error("cache.memoryUsage should've been 0")
+	}
+	cache.Set("1", 1)
+	if cache.memoryUsage <= previousCacheMemoryUsage {
+		t.Error("cache.memoryUsage should've increased")
+	}
+	previousCacheMemoryUsage = cache.memoryUsage
+	cache.SetAll(map[string]interface{}{"2": "2", "3": "3", "4": "4"})
+	if cache.memoryUsage <= previousCacheMemoryUsage {
+		t.Error("cache.memoryUsage should've increased")
+	}
+	previousCacheMemoryUsage = cache.memoryUsage
+	cache.Delete("2")
+	if cache.memoryUsage >= previousCacheMemoryUsage {
+		t.Error("cache.memoryUsage should've decreased")
+	}
+	previousCacheMemoryUsage = cache.memoryUsage
+	cache.Set("1", 1)
+	if cache.memoryUsage != previousCacheMemoryUsage {
+		t.Error("cache.memoryUsage shouldn't have changed, because the entry didn't change")
+	}
+	previousCacheMemoryUsage = cache.memoryUsage
+	cache.Delete("3")
+	if cache.memoryUsage >= previousCacheMemoryUsage {
+		t.Error("cache.memoryUsage should've decreased")
+	}
+	previousCacheMemoryUsage = cache.memoryUsage
+	cache.Delete("4")
+	if cache.memoryUsage >= previousCacheMemoryUsage {
+		t.Error("cache.memoryUsage should've decreased")
+	}
+	previousCacheMemoryUsage = cache.memoryUsage
+	cache.Delete("1")
+	if cache.memoryUsage >= previousCacheMemoryUsage || cache.memoryUsage != 0 {
+		t.Error("cache.memoryUsage should've been 0")
+	}
+	previousCacheMemoryUsage = cache.memoryUsage
+	cache.Set("1", "v4lu3")
+	if cache.memoryUsage <= previousCacheMemoryUsage {
+		t.Error("cache.memoryUsage should've increased")
+	}
+	previousCacheMemoryUsage = cache.memoryUsage
+	cache.Set("1", "value")
+	if cache.memoryUsage != previousCacheMemoryUsage {
+		t.Error("cache.memoryUsage shouldn't have changed")
+	}
+	previousCacheMemoryUsage = cache.memoryUsage
+	cache.Set("1", true)
+	if cache.memoryUsage >= previousCacheMemoryUsage {
+		t.Error("cache.memoryUsage should've decreased, because a bool uses less memory than a string")
 	}
 }

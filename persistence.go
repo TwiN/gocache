@@ -68,18 +68,31 @@ func (cache *Cache) ReadFromFile(path string) (int, error) {
 			cache.head = current
 		}
 		previous = entries[i]
+		if cache.MaxMemoryUsage != NoMaxMemoryUsage {
+			cache.memoryUsage += current.SizeInBytes()
+		}
 	}
-	// If the cache doesn't have a MaxSize, then there's no point checking if we need to evict
+	// If the cache doesn't have a MaxSize/MaxMemoryUsage, then there's no point checking if we need to evict
 	// an entry, so we'll just return now
-	if cache.MaxSize == NoMaxSize {
+	if cache.MaxSize == NoMaxSize && cache.MaxMemoryUsage == NoMaxMemoryUsage {
 		cache.mutex.Unlock()
 		return 0, nil
 	}
-	// Evict until the total number of entries matches the cache's maximum size
+	// Evict what needs to be evicted
 	numberOfEvictions := 0
-	for len(cache.entries) > cache.MaxSize {
-		numberOfEvictions++
-		cache.evict()
+	// If there's a MaxSize and the cache has more entries than the MaxSize, evict
+	if cache.MaxSize != NoMaxSize && len(cache.entries) > cache.MaxSize {
+		for len(cache.entries) > cache.MaxSize {
+			numberOfEvictions++
+			cache.evict()
+		}
+	}
+	// If there's a MaxMemoryUsage and the memoryUsage is above the MaxMemoryUsage, evict
+	if cache.MaxMemoryUsage != NoMaxMemoryUsage && cache.memoryUsage > cache.MaxMemoryUsage {
+		for cache.memoryUsage > cache.MaxMemoryUsage && len(cache.entries) > 0 {
+			numberOfEvictions++
+			cache.evict()
+		}
 	}
 	cache.mutex.Unlock()
 	return numberOfEvictions, nil

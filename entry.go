@@ -1,6 +1,10 @@
 package gocache
 
-import "time"
+import (
+	"fmt"
+	"time"
+	"unsafe"
+)
 
 type Entry struct {
 	Key   string
@@ -29,4 +33,67 @@ func (entry Entry) Expired() bool {
 		}
 	}
 	return false
+}
+
+func (entry *Entry) SizeInBytes() int {
+	return toBytes(entry.Key) + toBytes(entry.Value)
+}
+
+func toBytes(value interface{}) int {
+	switch value.(type) {
+	case string:
+		return int(unsafe.Sizeof(value)) + len(value.(string))
+	case int8, uint8, bool:
+		return int(unsafe.Sizeof(value)) + 1
+	case int16, uint16:
+		return int(unsafe.Sizeof(value)) + 2
+	case int32, uint32, float32, complex64:
+		return int(unsafe.Sizeof(value)) + 4
+	case int64, uint64, int, uint, float64, complex128:
+		return int(unsafe.Sizeof(value)) + 8
+	case []interface{}:
+		size := 0
+		for _, v := range value.([]interface{}) {
+			size += toBytes(v)
+		}
+		return int(unsafe.Sizeof(value)) + size
+	case []string:
+		size := 0
+		for _, v := range value.([]string) {
+			size += toBytes(v)
+		}
+		return int(unsafe.Sizeof(value)) + size
+	case []int8:
+		return int(unsafe.Sizeof(value)) + len(value.([]int8))
+	case []uint8:
+		return int(unsafe.Sizeof(value)) + len(value.([]uint8))
+	case []bool:
+		return int(unsafe.Sizeof(value)) + len(value.([]bool))
+	case []int16:
+		return int(unsafe.Sizeof(value)) + (len(value.([]int16)) * 2)
+	case []uint16:
+		return int(unsafe.Sizeof(value)) + (len(value.([]uint16)) * 2)
+	case []int32:
+		return int(unsafe.Sizeof(value)) + (len(value.([]int32)) * 4)
+	case []uint32:
+		return int(unsafe.Sizeof(value)) + (len(value.([]uint32)) * 4)
+	case []float32:
+		return int(unsafe.Sizeof(value)) + (len(value.([]float32)) * 4)
+	case []complex64:
+		return int(unsafe.Sizeof(value)) + (len(value.([]complex64)) * 4)
+	case []int64:
+		return int(unsafe.Sizeof(value)) + (len(value.([]int64)) * 8)
+	case []uint64:
+		return int(unsafe.Sizeof(value)) + (len(value.([]uint64)) * 8)
+	case []int:
+		return int(unsafe.Sizeof(value)) + (len(value.([]int)) * 8)
+	case []uint:
+		return int(unsafe.Sizeof(value)) + (len(value.([]uint)) * 8)
+	case []float64:
+		return int(unsafe.Sizeof(value)) + (len(value.([]float64)) * 8)
+	case []complex128:
+		return int(unsafe.Sizeof(value)) + (len(value.([]complex128)) * 8)
+	default:
+		return int(unsafe.Sizeof(value)) + len(fmt.Sprintf("%v", value))
+	}
 }
