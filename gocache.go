@@ -175,6 +175,7 @@ func (cache *Cache) SetWithTTL(key string, value interface{}, ttl time.Duration)
 		}
 		// Update existing entry's value
 		entry.Value = value
+		entry.RelevantTimestamp = time.Now()
 		if cache.maxMemoryUsage != NoMaxMemoryUsage {
 			// Add the memory usage of the new entry to the cache's memoryUsage
 			cache.memoryUsage += entry.SizeInBytes()

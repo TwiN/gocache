@@ -13,6 +13,8 @@ type Entry struct {
 	// RelevantTimestamp is the variable used to store either:
 	// - creation timestamp, if the Cache's EvictionPolicy is FirstInFirstOut
 	// - last access timestamp, if the Cache's EvictionPolicy is LeastRecentlyUsed
+	//
+	// Note that updating an existing entry will also update this value
 	RelevantTimestamp time.Time
 
 	// Expiration is the unix time in nanoseconds at which the entry will expire (-1 means no expiration)
