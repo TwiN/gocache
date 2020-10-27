@@ -465,10 +465,13 @@ func (server *Server) autoSave() {
 			log.Println("terminating auto save process because server is no longer running")
 			break
 		}
+		start := time.Now()
+		log.Printf("Persisting data to %s...", server.AutoSaveFile)
 		err := server.Cache.SaveToFile(server.AutoSaveFile)
 		if err != nil {
 			log.Printf("error while autosaving: %s", err.Error())
 			continue
 		}
+		log.Printf("Persisted data to %s successfully in %s", server.AutoSaveFile, time.Since(start))
 	}
 }
