@@ -28,9 +28,10 @@ const (
 )
 
 var (
-	ErrKeyDoesNotExist       = errors.New("key does not exist")
-	ErrKeyHasNoExpiration    = errors.New("key has no expiration")
-	ErrJanitorAlreadyRunning = errors.New("janitor is already running")
+	ErrKeyDoesNotExist        = errors.New("key does not exist")
+	ErrKeyHasNoExpiration     = errors.New("key has no expiration")
+	ErrJanitorAlreadyRunning  = errors.New("janitor is already running")
+	ErrAutoSaveAlreadyRunning = errors.New("autosave is already running")
 )
 
 // Cache is the core struct of gocache which contains the data as well as all relevant configuration fields
@@ -47,17 +48,25 @@ type Cache struct {
 	// evictionPolicy is the eviction policy
 	evictionPolicy EvictionPolicy
 
+	// stats is the object that contains cache statistics/metrics
 	stats *Statistics
 
+	// entries is the content of the cache
 	entries map[string]*Entry
-	mutex   sync.RWMutex
 
+	// mutex is the lock for making concurrent operations on the cache
+	mutex sync.RWMutex
+
+	// head is the cache entry at the head of the cache
 	head *Entry
+
+	// tail is the last cache node and also the next entry that will be evicted
 	tail *Entry
 
 	// stopJanitor is the channel used to stop the janitor
 	stopJanitor chan bool
 
+	// memoryUsage is the approximate memory usage of the cache (dataset only) in bytes
 	memoryUsage int
 }
 
