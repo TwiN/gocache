@@ -23,6 +23,7 @@ with support for LRU and FIFO eviction policies as well as expiration, bulk oper
     - [Deleting an entry](#deleting-an-entry)
     - [Complex example](#complex-example)
 - [Persistence](#persistence)
+  - [Limitations](#limitations)
 - [Eviction](#eviction)
   - [MaxSize](#maxsize)
   - [MaxMemoryUsage](#maxmemoryusage)
@@ -90,8 +91,8 @@ cache.StartJanitor()
 | Clear              | Wipes the cache.
 | TTL                | Gets the time until a cache key expires. 
 | Expire             | Sets the expiration time of an existing cache key.
-| SaveToFile         | Stores the content of the cache to a file so that it can be read using `ReadFromFile`
-| ReadFromFile       | Populates the cache using a file created using `SaveToFile`
+| SaveToFile         | Stores the content of the cache to a file so that it can be read using `ReadFromFile`. See [persistence](#persistence).
+| ReadFromFile       | Populates the cache using a file created using `SaveToFile`. See [persistence](#persistence).
 
 
 ### Examples
@@ -202,6 +203,48 @@ numberOfEntriesEvicted, err := newCache.ReadFromFile(TestCacheFile)
 ```
 The `numberOfEntriesEvicted` will be non-zero only if the number of entries 
 in the file is higher than the cache's configured `MaxSize`.
+
+### Limitations
+While you can cache structs in memory out of the box, persisting structs to a file requires you to 
+**register the custom interfaces that your application uses with the `gob` package**.
+
+```go
+type YourCustomStruct struct {
+	A string
+	B int
+}
+
+// ...
+cache.Set("key", YourCustomStruct{A: "test", B: 123})
+```
+To persist your custom struct properly:
+```go
+gob.Register(YourCustomStruct{})
+cache.SaveToFile("gocache.bak")
+``` 
+The same applies for restoring the cache from a file:
+```go
+cache := NewCache()
+gob.Register(YourCustomStruct{})
+cache.ReadFromFile(TestCacheFile)
+value, _ := cache.Get("key")
+fmt.Println(value.(YourCustomStruct))
+```
+You only need to persist the struct once, so adding the following function in a file would suffice:
+```go
+func init() {
+    gob.Register(YourCustomStruct{})
+}
+```
+
+Failure to register your custom structs will prevent gocache from persisting and/or parsing the value of each keys that 
+use said custom structs.
+
+That being said, assuming that you're using gocache as a cache, this shouldn't create any bugs on your end, because
+every key that cannot be parsed are not populated into the cache by `ReadFromFile`.
+
+In other words, if you're falling back to a database or something similar when the cache doesn't have the key requested,
+you'll be fine.
 
 
 ## Eviction

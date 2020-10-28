@@ -1,6 +1,7 @@
 package gocache
 
 import (
+	"encoding/gob"
 	"fmt"
 	"os"
 	"strconv"
@@ -56,7 +57,7 @@ func TestCache_ReadFromFile(t *testing.T) {
 		panic(err)
 	}
 	cache.Clear()
-	cache = cache.WithMaxSize(7)
+	cache = NewCache().WithMaxSize(7)
 	numberOfEntriesEvicted, err := cache.ReadFromFile(TestCacheFile)
 	if err != nil {
 		panic(err)
@@ -82,6 +83,49 @@ func TestCache_ReadFromFile(t *testing.T) {
 	cache.evict()
 	// Make sure we can create new entries
 	cache.Set("eviction-test", 1)
+}
+
+func TestCache_SaveToFileStruct(t *testing.T) {
+	defer os.Remove(TestCacheFile)
+	cache := NewCache()
+	type SpecialString string
+	type NestedStruct struct {
+		D string
+	}
+	type CustomStruct struct {
+		A string
+		B int
+		C *NestedStruct
+		E SpecialString
+	}
+	// register the custom struct with gob
+	gob.Register(CustomStruct{})
+	cache.Set("key", CustomStruct{A: "test", B: 123, C: &NestedStruct{D: "what"}, E: "special"})
+	err := cache.SaveToFile(TestCacheFile)
+	if err != nil {
+		t.Fatal("shouldn't have returned an error, but got:", err.Error())
+	}
+	newCache := NewCache()
+	numberOfEntriesEvicted, err := newCache.ReadFromFile(TestCacheFile)
+	if err != nil {
+		t.Fatal("shouldn't have returned an error, but got:", err.Error())
+	}
+	if numberOfEntriesEvicted != 0 {
+		t.Error("expected 0 entries to have been evicted, but got", numberOfEntriesEvicted)
+	}
+	value, _ := newCache.Get("key")
+	if value.(CustomStruct).A != "test" {
+		t.Error("value.A should've been 'test'")
+	}
+	if value.(CustomStruct).B != 123 {
+		t.Error("value.B should've been '123'")
+	}
+	if value.(CustomStruct).C.D != "what" {
+		t.Error("value.C.D should've been 'what'")
+	}
+	if value.(CustomStruct).E != "special" {
+		t.Error("value.E should've been 'special'")
+	}
 }
 
 // go test -cpuprofile cpu.prof -memprofile mem.prof -bench ^\QTestCache_ReadFromFileWithBigFile\E$

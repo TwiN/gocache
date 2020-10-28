@@ -1,3 +1,6 @@
+# github.com/boltdb/bolt v1.3.1
+## explicit
+github.com/boltdb/bolt
 # github.com/go-redis/redis v6.15.9+incompatible
 ## explicit
 github.com/go-redis/redis
@@ -14,3 +17,6 @@ github.com/go-redis/redis/internal/util
 # github.com/tidwall/redcon v1.3.2
 ## explicit
 github.com/tidwall/redcon
+# golang.org/x/sys v0.0.0-20200519105757-fe76b779f299
+golang.org/x/sys/internal/unsafeheader
+golang.org/x/sys/unix
