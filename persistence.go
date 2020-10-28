@@ -18,14 +18,14 @@ func (cache *Cache) SaveToFile(path string) error {
 		return err
 	}
 	start := time.Now()
-	cache.mutex.Lock()
+	cache.mutex.RLock()
 	bulkEntries := make([]*Entry, len(cache.entries))
 	i := 0
 	for _, v := range cache.entries {
 		bulkEntries[i] = v
 		i++
 	}
-	cache.mutex.Unlock()
+	cache.mutex.RUnlock()
 	if Debug {
 		log.Printf("unlocked after %s", time.Since(start))
 	}

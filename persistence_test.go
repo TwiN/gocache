@@ -1,3 +1,5 @@
+// +build !race
+
 package gocache
 
 import (
@@ -49,7 +51,7 @@ func TestCache_SaveToFile(t *testing.T) {
 func TestCache_ReadFromFile(t *testing.T) {
 	defer os.Remove(TestCacheFile)
 	cache := NewCache()
-	for n := 0; n < 10; n++ {
+	for n := 0; n < 100; n++ {
 		cache.Set(strconv.Itoa(n), fmt.Sprintf("v%d", n))
 	}
 	err := cache.SaveToFile(TestCacheFile)
@@ -57,7 +59,7 @@ func TestCache_ReadFromFile(t *testing.T) {
 		panic(err)
 	}
 	cache.Clear()
-	cache = NewCache().WithMaxSize(7)
+	cache = NewCache().WithMaxSize(97)
 	numberOfEntriesEvicted, err := cache.ReadFromFile(TestCacheFile)
 	if err != nil {
 		panic(err)
@@ -65,8 +67,8 @@ func TestCache_ReadFromFile(t *testing.T) {
 	if numberOfEntriesEvicted != 3 {
 		t.Error("expected 3 entries to have been evicted, but got", numberOfEntriesEvicted)
 	}
-	if cache.Count() != 7 {
-		t.Error("expected newCache to have 7 entries since its maxSize is 7, but got", cache.Count())
+	if cache.Count() != 97 {
+		t.Error("expected newCache to have 97 entries since its maxSize is 97, but got", cache.Count())
 	}
 	// Make sure all entries have the right values and can still be GETable
 	for key, value := range cache.entries {
