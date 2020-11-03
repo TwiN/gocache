@@ -6,9 +6,11 @@ import (
 	"time"
 )
 
-const (
+var (
 	Debug = false
+)
 
+const (
 	// NoMaxSize means that the cache has no maximum number of entries in the cache
 	// Setting Cache.maxSize to this value also means there will be no eviction
 	NoMaxSize = 0
