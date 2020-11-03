@@ -509,3 +509,10 @@ func TestServer_WithAutoSave(t *testing.T) {
 		t.Errorf("New cache server should've been repopulated by the AutoSaveFile of and have a size of 2, but has %d instead", otherServerWithAutoSave.Cache.Count())
 	}
 }
+
+func TestServer_StartWhenAlreadyStarted(t *testing.T) {
+	err := server.Start()
+	if err == nil {
+		t.Error("expected an error because the server has already been started")
+	}
+}
