@@ -291,8 +291,15 @@ func TestQUIT(t *testing.T) {
 		Addr: "localhost:16162",
 		DB:   0,
 	})
+	// First connection
+	testClient.Ping()
+	// Check how many connections the server has
 	numberOfConnections := server.numberOfConnections
+	// Send QUIT to the test client
 	testClient.Do("QUIT").Val()
+	// Wait for a bit to make sure that the callback function that updates server.numberOfConnections has been called
+	time.Sleep(100 * time.Millisecond)
+	// Compare the number of connections we had before vs after QUIT
 	if numberOfConnections == server.numberOfConnections {
 		t.Error("connection should've been closed")
 	}
