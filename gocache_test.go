@@ -735,10 +735,17 @@ func TestCache_Expire(t *testing.T) {
 	time.Sleep(6 * time.Millisecond)
 	_, err = cache.TTL("key")
 	if err != ErrKeyDoesNotExist {
-		t.Error("key should've expired, thus TTL should've returned ")
+		t.Error("key should've expired, thus TTL should've returned ErrKeyDoesNotExist")
 	}
 	if cache.Expire("key", time.Hour) {
 		t.Error("Expire should've returned false, because the key should've already expired, thus no longer exist")
+	}
+	cache.SetWithTTL("key", "value", time.Hour)
+	if !cache.Expire("key", NoExpiration) {
+		t.Error("Expire should've returned true")
+	}
+	if _, err := cache.TTL("key"); err != ErrKeyHasNoExpiration {
+		t.Error("TTL should've returned ErrKeyHasNoExpiration")
 	}
 }
 
