@@ -718,23 +718,6 @@ func TestCache_Clear(t *testing.T) {
 	}
 }
 
-func TestCache_StartJanitor(t *testing.T) {
-	cache := NewCache()
-	cache.SetWithTTL("1", "1", time.Nanosecond)
-	if cacheSize := cache.Count(); cacheSize != 1 {
-		t.Errorf("expected cacheSize to be 1, but was %d", cacheSize)
-	}
-	err := cache.StartJanitor()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer cache.StopJanitor()
-	time.Sleep(JanitorMinShiftBackOff * 2)
-	if cacheSize := cache.Count(); cacheSize != 0 {
-		t.Errorf("expected cacheSize to be 0, but was %d", cacheSize)
-	}
-}
-
 func TestCache_WithMaxMemoryUsage(t *testing.T) {
 	const ValueSize = Kilobyte
 	cache := NewCache().WithMaxSize(0).WithMaxMemoryUsage(Kilobyte * 64)
