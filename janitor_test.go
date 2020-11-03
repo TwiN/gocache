@@ -50,40 +50,41 @@ func TestJanitor(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer cache.StopJanitor()
-	time.Sleep(JanitorMinShiftBackOff * 4)
+	time.Sleep(JanitorMinShiftBackOff * 3)
 	if cacheSize <= cache.Count() {
 		t.Error("The janitor should be deleting expired cache entries")
 	}
 	cacheSize = cache.Count()
-	time.Sleep(JanitorMinShiftBackOff * 4)
+	time.Sleep(JanitorMinShiftBackOff * 3)
 	if cacheSize <= cache.Count() {
 		t.Error("The janitor should be deleting expired cache entries")
 	}
 	cacheSize = cache.Count()
-	time.Sleep(JanitorMinShiftBackOff * 4)
+	time.Sleep(JanitorMinShiftBackOff * 3)
 	if cacheSize <= cache.Count() {
 		t.Error("The janitor should be deleting expired cache entries")
 	}
 }
 
 func TestJanitorIsLoopingProperly(t *testing.T) {
-	cache := NewCache().WithMaxSize(3 * JanitorMaxIterationsPerShift)
+	cache := NewCache().WithMaxSize(JanitorMaxIterationsPerShift + 3)
 	defer cache.Clear()
-	cache.SetWithTTL("1", "value", time.Hour)
-	cache.SetWithTTL("2", "value", JanitorMinShiftBackOff*3)
-	cache.SetWithTTL("3", "value", JanitorMinShiftBackOff*3)
-	cache.SetWithTTL("4", "value", JanitorMinShiftBackOff*3)
-	cache.SetWithTTL("5", "value", time.Hour)
+	for i := 0; i < JanitorMaxIterationsPerShift; i++ {
+		cache.SetWithTTL(fmt.Sprintf("%d", i), "value", time.Hour)
+	}
+	cache.SetWithTTL("key-to-expire-1", "value", JanitorMinShiftBackOff*2)
+	cache.SetWithTTL("key-to-expire-2", "value", JanitorMinShiftBackOff*2)
+	cache.SetWithTTL("key-to-expire-3", "value", JanitorMinShiftBackOff*2)
 	err := cache.StartJanitor()
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer cache.StopJanitor()
-	if cache.Count() != 5 {
-		t.Error("The janitor shouldn't have had enough time to remove anything from the cache yet")
+	if cache.Count() != JanitorMaxIterationsPerShift+3 {
+		t.Error("The janitor shouldn't have had enough time to remove anything from the cache yet", cache.Count())
 	}
-	time.Sleep(JanitorMinShiftBackOff * 4)
-	if cache.Count() != 2 {
-		t.Error("The janitor should've deleted 3 of the 5 entries")
+	time.Sleep(JanitorMinShiftBackOff * 5)
+	if cache.Count() != JanitorMaxIterationsPerShift {
+		t.Error("The janitor should've deleted 3 entries")
 	}
 }
