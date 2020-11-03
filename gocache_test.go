@@ -12,6 +12,44 @@ const (
 	TestCacheFile = "test.cache"
 )
 
+func TestNewCache(t *testing.T) {
+	cache := NewCache().WithMaxSize(1234).WithEvictionPolicy(LeastRecentlyUsed)
+	if cache.MaxMemoryUsage() != NoMaxMemoryUsage {
+		t.Error("shouldn't have a max memory usage configured")
+	}
+	if cache.EvictionPolicy() != LeastRecentlyUsed {
+		t.Error("should've had a LeastRecentlyUsed eviction policy")
+	}
+	if cache.MaxSize() != 1234 {
+		t.Error("should've had a max cache size of 1234")
+	}
+}
+
+func TestCache_Stats(t *testing.T) {
+	cache := NewCache().WithMaxSize(1234).WithEvictionPolicy(LeastRecentlyUsed)
+	cache.Set("key", "value")
+	if cache.Stats().Hits != 0 {
+		t.Error("should have 0 hits")
+	}
+	if cache.Stats().Misses != 0 {
+		t.Error("should have 0 misses")
+	}
+	cache.Get("key")
+	if cache.Stats().Hits != 1 {
+		t.Error("should have 1 hit")
+	}
+	if cache.Stats().Misses != 0 {
+		t.Error("should have 0 misses")
+	}
+	cache.Get("key-that-does-not-exist")
+	if cache.Stats().Hits != 1 {
+		t.Error("should have 1 hit")
+	}
+	if cache.Stats().Misses != 1 {
+		t.Error("should have 1 miss")
+	}
+}
+
 func TestCache_Get(t *testing.T) {
 	cache := NewCache().WithMaxSize(10)
 	cache.Set("key", "value")
