@@ -427,6 +427,7 @@ func TestUnknownCommand(t *testing.T) {
 
 func TestServer_WithAutoSave(t *testing.T) {
 	defer os.Remove("TestServer_WithAutoSave.bak")
+	defer os.Remove("TestServer_WithAutoSave.bak.lock")
 	serverWithAutoSave := NewServer(gocache.NewCache().WithEvictionPolicy(gocache.LeastRecentlyUsed).WithMaxSize(10)).WithPort(16163).WithAutoSave(10*time.Millisecond, "TestServer_WithAutoSave.bak")
 	go serverWithAutoSave.Start()
 	serverWithAutoSave.Cache.Set("john", "doe")

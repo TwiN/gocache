@@ -127,8 +127,8 @@ func (server *Server) Start() error {
 	server.running = true
 	log.Printf("Listening on %s", address)
 	err := server.cacheServer.ListenAndServe()
-	server.running = false
 	server.Cache.StopJanitor()
+	server.running = false
 	if server.AutoSaveInterval != 0 {
 		log.Printf("Saving to %s before closing...", server.AutoSaveFile)
 		start := time.Now()
