@@ -854,3 +854,10 @@ func TestCache_memoryUsageIsReliable(t *testing.T) {
 		t.Error("cache.MemoryUsage() should've decreased, because a bool uses less memory than a string")
 	}
 }
+
+func TestEvictionWhenThereIsNothingToEvict(t *testing.T) {
+	cache := NewCache()
+	cache.evict()
+	cache.evict()
+	cache.evict()
+}
