@@ -401,6 +401,9 @@ BenchmarkCache_GetKeysThatDoNotExistConcurrently-8                         	1017
 ## FAQ
 
 ### Why does the memory usage not go down?
+
+> **NOTE**: As of Go 1.16, this will no longer apply. See [golang/go#42330](https://github.com/golang/go/issues/42330)
+
 By default, Go uses `MADV_FREE` if the kernel supports it to release memory, which is significantly more efficient 
 than using `MADV_DONTNEED`. Unfortunately, this means that RSS doesn't go down unless the OS actually needs the 
 memory. 
