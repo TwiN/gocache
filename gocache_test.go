@@ -788,7 +788,14 @@ func TestCache_WithMaxMemoryUsageWhenAddingAnEntryThatCausesMoreThanOneEviction(
 	}
 }
 
-func TestCache_memoryUsageAfterSet10000AndDelete5000(t *testing.T) {
+func TestCache_WithMaxMemoryUsageWhenNegativeMaxMemoryUsageIsPassed(t *testing.T) {
+	cache := NewCache().WithMaxSize(0).WithMaxMemoryUsage(-1234)
+	if cache.MaxMemoryUsage() != NoMaxMemoryUsage {
+		t.Error("attempting to set a negative max memory usage should force MaxMemoryUsage to NoMaxMemoryUsage")
+	}
+}
+
+func TestCache_MemoryUsageAfterSet10000AndDelete5000(t *testing.T) {
 	const ValueSize = 64
 	cache := NewCache().WithMaxSize(10000).WithMaxMemoryUsage(Gigabyte)
 	for i := 0; i < cache.maxSize; i++ {
@@ -805,7 +812,7 @@ func TestCache_memoryUsageAfterSet10000AndDelete5000(t *testing.T) {
 	}
 }
 
-func TestCache_memoryUsageIsReliable(t *testing.T) {
+func TestCache_MemoryUsageIsReliable(t *testing.T) {
 	cache := NewCache().WithMaxMemoryUsage(Megabyte)
 	previousCacheMemoryUsage := cache.MemoryUsage()
 	if previousCacheMemoryUsage != 0 {
