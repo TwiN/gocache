@@ -6,6 +6,7 @@ import (
 	"github.com/TwinProduction/gocache"
 	"github.com/go-redis/redis"
 	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -133,6 +134,24 @@ func TestDEL(t *testing.T) {
 	}
 }
 
+func TestMGET(t *testing.T) {
+	defer server.Cache.Clear()
+	server.Cache.Set("k1", "v1")
+	server.Cache.Set("k2", "v2")
+	server.Cache.Set("k3", "v3")
+	server.Cache.Set("k4", "v4")
+	c := client.MGet("k1", "k3")
+	if len(c.Val()) != 2 {
+		t.Error("Expected 2 keys to be returned")
+	}
+	if c.Val()[0] != "v1" {
+		t.Error("Expected first value to be v1")
+	}
+	if c.Val()[1] != "v3" {
+		t.Error("Expected second value to be v3")
+	}
+}
+
 func TestMSET(t *testing.T) {
 	defer server.Cache.Clear()
 	client.MSet("k1", "v1", "k2", "v2")
@@ -151,11 +170,35 @@ func TestEXPIRE(t *testing.T) {
 		t.Error("key should've existed")
 	}
 	// expire the key now
-	client.Expire("key", 0)
+	c := client.Expire("key", 0)
+	if !c.Val() {
+		t.Error("should've returned true, because the key exists")
+	}
 	// wait a bit to make sure the key's gone
 	time.Sleep(time.Millisecond)
 	if _, ok := server.Cache.Get("key"); ok {
 		t.Error("key should've expired")
+	}
+}
+
+func TestEXPIREWithKeyThatDoesNotExist(t *testing.T) {
+	c := client.Expire("key", 0)
+	if c.Val() {
+		t.Error("should've returned false, because the key does not exist")
+	}
+}
+
+func TestEXPIREWithInvalidNumberOfArgs(t *testing.T) {
+	c := client.Do("expire", 1, 2, 3, 4, 5)
+	if !strings.Contains(c.Err().Error(), "wrong number of arguments") {
+		t.Error("Expected server to return an error")
+	}
+}
+
+func TestEXPIREWithInvalidExpireTime(t *testing.T) {
+	c := client.Do("expire", "key", "invalid-expire-time")
+	if c.Err().Error() != "ERR value is not an integer or out of range" {
+		t.Error("Expected server to return an error")
 	}
 }
 
@@ -208,8 +251,45 @@ func TestECHO(t *testing.T) {
 }
 
 func TestINFO(t *testing.T) {
-	if len(client.Info().Val()) < 100 {
+	output := client.Info().Val()
+	if len(output) < 200 {
 		t.Error("INFO should've returned at least some info")
+	}
+	if !strings.Contains(output, "# Server") {
+		t.Error("Server section should've been present")
+	}
+	if !strings.Contains(output, "# Clients") {
+		t.Error("Clients section should've been present")
+	}
+	if !strings.Contains(output, "# Stats") {
+		t.Error("Stats section should've been present")
+	}
+	if !strings.Contains(output, "# Memory") {
+		t.Error("Memory section should've been present")
+	}
+	if !strings.Contains(output, "# Replication") {
+		t.Error("Replication section should've been present")
+	}
+}
+
+func TestINFOWithOnlyMemorySection(t *testing.T) {
+	output := client.Info("MEMORY").Val()
+	// Only the memory section should be returned
+	if !strings.Contains(output, "# Memory") {
+		t.Error("Memory section should've been present")
+	}
+	// These sections shouldn't be returned
+	if strings.Contains(output, "# Server") {
+		t.Error("Server section shouldn't have been present")
+	}
+	if strings.Contains(output, "# Clients") {
+		t.Error("Clients section shouldn't have been present")
+	}
+	if strings.Contains(output, "# Stats") {
+		t.Error("Stats section shouldn't have been present")
+	}
+	if strings.Contains(output, "# Replication") {
+		t.Error("Replication section shouldn't have been present")
 	}
 }
 
