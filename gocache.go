@@ -28,10 +28,9 @@ const (
 )
 
 var (
-	ErrKeyDoesNotExist        = errors.New("key does not exist")
-	ErrKeyHasNoExpiration     = errors.New("key has no expiration")
-	ErrJanitorAlreadyRunning  = errors.New("janitor is already running")
-	ErrAutoSaveAlreadyRunning = errors.New("autosave is already running")
+	ErrKeyDoesNotExist       = errors.New("key does not exist")
+	ErrKeyHasNoExpiration    = errors.New("key has no expiration")
+	ErrJanitorAlreadyRunning = errors.New("janitor is already running")
 )
 
 // Cache is the core struct of gocache which contains the data as well as all relevant configuration fields
