@@ -3,6 +3,7 @@
 package gocacheserver
 
 import (
+	"fmt"
 	"github.com/TwinProduction/gocache"
 	"github.com/go-redis/redis"
 	"os"
@@ -377,7 +378,7 @@ func TestSCAN(t *testing.T) {
 	}
 }
 
-func TestSCAN_AndRespectCount(t *testing.T) {
+func TestSCANIsRespectingCount(t *testing.T) {
 	defer server.Cache.Clear()
 	server.Cache.Set("vegetable", "true")
 	server.Cache.Set("k1", "value")
@@ -395,12 +396,49 @@ func TestSCAN_AndRespectCount(t *testing.T) {
 	}
 }
 
+func TestSCANWithDefaultLimit(t *testing.T) {
+	defer server.Cache.Clear()
+	for i := 0; i < 20; i++ {
+		server.Cache.Set(fmt.Sprintf("KEY_%d", i), "value")
+	}
+	if server.Cache.Count() != 20 {
+		t.Error("cache should have a size of 20")
+	}
+	c := client.Do("SCAN", 0)
+	// Can't be bothered actually parsing the output into an object, so counting the number of "KEY_" substrings
+	// is sufficient since all keys in this test are prefixed by "KEY_"
+	if strings.Count(fmt.Sprintf("%v", c.Val()), "KEY_") != 10 {
+		t.Error("Should've returned 10 keys, because the default limit is 10")
+	}
+}
+
+func TestSCANWithInvalidNumberOfArgs(t *testing.T) {
+	c := client.Do("SCAN")
+	if !strings.Contains(c.Err().Error(), "wrong number of arguments") {
+		t.Error("Expected server to return an error")
+	}
+}
+
+func TestSCANWithInvalidCount(t *testing.T) {
+	c := client.Do("SCAN", "not-a-valid-cursor")
+	if c.Err().Error() != "ERR value is not an integer or out of range" {
+		t.Error("Expected server to return an error")
+	}
+}
+
 func TestTTL(t *testing.T) {
 	defer server.Cache.Clear()
 	client.Set("key", "value", 10*time.Second)
 	ttl := client.TTL("key").Val()
 	if ttl.Seconds() < 9 || ttl.Seconds() > 10 {
 		t.Error("expected TTL of ~9999ms")
+	}
+}
+
+func TestTTLWithInvalidNumberOfArgs(t *testing.T) {
+	c := client.Do("TTL")
+	if !strings.Contains(c.Err().Error(), "wrong number of arguments") {
+		t.Error("Expected server to return an error")
 	}
 }
 
