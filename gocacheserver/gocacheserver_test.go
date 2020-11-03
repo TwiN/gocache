@@ -122,6 +122,20 @@ func TestSET_EX(t *testing.T) {
 	}
 }
 
+func TestSETWithInvalidNumberOfArgs(t *testing.T) {
+	c := client.Do("SET")
+	if !strings.Contains(c.Err().Error(), "wrong number of arguments") {
+		t.Error("Expected server to return an error")
+	}
+}
+
+func TestSETWithInvalidTTL(t *testing.T) {
+	c := client.Do("SET", "key", "value", "EX", "invalid-ttl")
+	if c.Err().Error() != "ERR value is not an integer or out of range" {
+		t.Error("Expected server to return an error")
+	}
+}
+
 func TestDEL(t *testing.T) {
 	defer server.Cache.Clear()
 	client.Set("key", "value", 0)
@@ -131,6 +145,13 @@ func TestDEL(t *testing.T) {
 	client.Del("key")
 	if _, ok := server.Cache.Get("key"); ok {
 		t.Error("key should've been deleted")
+	}
+}
+
+func TestDELWithInvalidNumberOfArgs(t *testing.T) {
+	c := client.Do("DEL")
+	if !strings.Contains(c.Err().Error(), "wrong number of arguments") {
+		t.Error("Expected server to return an error")
 	}
 }
 
@@ -189,14 +210,14 @@ func TestEXPIREWithKeyThatDoesNotExist(t *testing.T) {
 }
 
 func TestEXPIREWithInvalidNumberOfArgs(t *testing.T) {
-	c := client.Do("expire", 1, 2, 3, 4, 5)
+	c := client.Do("EXPIRE", 1, 2, 3, 4, 5)
 	if !strings.Contains(c.Err().Error(), "wrong number of arguments") {
 		t.Error("Expected server to return an error")
 	}
 }
 
 func TestEXPIREWithInvalidExpireTime(t *testing.T) {
-	c := client.Do("expire", "key", "invalid-expire-time")
+	c := client.Do("EXPIRE", "key", "invalid-expire-time")
 	if c.Err().Error() != "ERR value is not an integer or out of range" {
 		t.Error("Expected server to return an error")
 	}
@@ -215,6 +236,20 @@ func TestSETEX(t *testing.T) {
 	}
 }
 
+func TestSETEXWithInvalidNumberOfArgs(t *testing.T) {
+	c := client.Do("SETEX")
+	if !strings.Contains(c.Err().Error(), "wrong number of arguments") {
+		t.Error("Expected server to return an error")
+	}
+}
+
+func TestSETEXWithInvalidTTL(t *testing.T) {
+	c := client.Do("SETEX", "key", "invalid-ttl", "value")
+	if c.Err().Error() != "ERR value is not an integer or out of range" {
+		t.Error("Expected server to return an error")
+	}
+}
+
 func TestEXISTS(t *testing.T) {
 	defer server.Cache.Clear()
 	client.Set("k1", "v1", 0)
@@ -223,6 +258,13 @@ func TestEXISTS(t *testing.T) {
 	output := client.Exists("k1", "k2", "key-that-does-not-exist").Val()
 	if output != 2 {
 		t.Error("Expected 2 keys to exist, got", output)
+	}
+}
+
+func TestEXISTSWithInvalidNumberOfArgs(t *testing.T) {
+	c := client.Do("exists")
+	if !strings.Contains(c.Err().Error(), "wrong number of arguments") {
+		t.Error("Expected server to return an error")
 	}
 }
 
@@ -340,6 +382,27 @@ func TestTTL(t *testing.T) {
 	ttl := client.TTL("key").Val()
 	if ttl.Seconds() < 9 || ttl.Seconds() > 10 {
 		t.Error("expected TTL of ~9999ms")
+	}
+}
+
+func TestTTLWithKeyThatDoesNotExist(t *testing.T) {
+	defer server.Cache.Clear()
+	ttl := client.TTL("key").Val()
+	// NOTE: This should actually just return -2, but the Redis client library is converting the -2 into a duration
+	// of -2s
+	if ttl.Seconds() != -2 {
+		t.Errorf("expected TTL to return -2 because the key does not exist, got %v", ttl.Seconds())
+	}
+}
+
+func TestTTLWithKeyThatDoesNotHaveAnExpiration(t *testing.T) {
+	defer server.Cache.Clear()
+	server.Cache.Set("key", "value")
+	ttl := client.TTL("key").Val()
+	// NOTE: This should actually just return -1, but the Redis client library is converting the -1 into a duration
+	// of -1s
+	if ttl.Seconds() != -1 {
+		t.Errorf("expected TTL to return -1 because the key does not have an expiration time, got %v", ttl.Seconds())
 	}
 }
 
