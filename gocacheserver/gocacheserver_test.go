@@ -419,8 +419,15 @@ func TestSCANWithInvalidNumberOfArgs(t *testing.T) {
 	}
 }
 
-func TestSCANWithInvalidCount(t *testing.T) {
+func TestSCANWithInvalidCursor(t *testing.T) {
 	c := client.Do("SCAN", "not-a-valid-cursor")
+	if c.Err().Error() != "ERR value is not an integer or out of range" {
+		t.Error("Expected server to return an error")
+	}
+}
+
+func TestSCANWithInvalidCount(t *testing.T) {
+	c := client.Do("SCAN", 0, "COUNT", "not-a-valid-count")
 	if c.Err().Error() != "ERR value is not an integer or out of range" {
 		t.Error("Expected server to return an error")
 	}
