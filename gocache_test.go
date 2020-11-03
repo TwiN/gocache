@@ -23,6 +23,9 @@ func TestNewCache(t *testing.T) {
 	if cache.MaxSize() != 1234 {
 		t.Error("should've had a max cache size of 1234")
 	}
+	if cache.MemoryUsage() != 0 {
+		t.Error("should've had a memory usage of 0")
+	}
 }
 
 func TestCache_Stats(t *testing.T) {
@@ -762,7 +765,7 @@ func TestCache_WithMaxMemoryUsage(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		cache.Set(fmt.Sprintf("%d", i), strings.Repeat("0", ValueSize))
 	}
-	if cache.memoryUsage/1024 < 63 || cache.memoryUsage/1024 > 65 {
+	if cache.MemoryUsage()/1024 < 63 || cache.MemoryUsage()/1024 > 65 {
 		t.Error("expected memoryUsage to be between 63KB and 64KB")
 	}
 }
@@ -773,7 +776,7 @@ func TestCache_WithMaxMemoryUsageWhenAddingAnEntryThatCausesMoreThanOneEviction(
 	for i := 0; i < 100; i++ {
 		cache.Set(fmt.Sprintf("%d", i), strings.Repeat("0", ValueSize))
 	}
-	if cache.memoryUsage/1024 < 63 || cache.memoryUsage/1024 > 65 {
+	if cache.MemoryUsage()/1024 < 63 || cache.MemoryUsage()/1024 > 65 {
 		t.Error("expected memoryUsage to be between 63KB and 64KB")
 	}
 }
@@ -784,12 +787,12 @@ func TestCache_memoryUsageAfterSet10000AndDelete5000(t *testing.T) {
 	for i := 0; i < cache.maxSize; i++ {
 		cache.Set(fmt.Sprintf("%05d", i), strings.Repeat("0", ValueSize))
 	}
-	memoryUsageBeforeDeleting := cache.memoryUsage
+	memoryUsageBeforeDeleting := cache.MemoryUsage()
 	for i := 0; i < cache.maxSize/2; i++ {
 		key := fmt.Sprintf("%05d", i)
 		cache.Delete(key)
 	}
-	memoryUsageRatio := float32(cache.memoryUsage) / float32(memoryUsageBeforeDeleting)
+	memoryUsageRatio := float32(cache.MemoryUsage()) / float32(memoryUsageBeforeDeleting)
 	if memoryUsageRatio != 0.5 {
 		t.Error("Since half of the keys were deleted, the memoryUsage should've been half of what the memory usage was before beginning deletion")
 	}
@@ -797,57 +800,57 @@ func TestCache_memoryUsageAfterSet10000AndDelete5000(t *testing.T) {
 
 func TestCache_memoryUsageIsReliable(t *testing.T) {
 	cache := NewCache().WithMaxMemoryUsage(Megabyte)
-	previousCacheMemoryUsage := cache.memoryUsage
+	previousCacheMemoryUsage := cache.MemoryUsage()
 	if previousCacheMemoryUsage != 0 {
-		t.Error("cache.memoryUsage should've been 0")
+		t.Error("cache.MemoryUsage() should've been 0")
 	}
 	cache.Set("1", 1)
-	if cache.memoryUsage <= previousCacheMemoryUsage {
-		t.Error("cache.memoryUsage should've increased")
+	if cache.MemoryUsage() <= previousCacheMemoryUsage {
+		t.Error("cache.MemoryUsage() should've increased")
 	}
-	previousCacheMemoryUsage = cache.memoryUsage
+	previousCacheMemoryUsage = cache.MemoryUsage()
 	cache.SetAll(map[string]interface{}{"2": "2", "3": "3", "4": "4"})
-	if cache.memoryUsage <= previousCacheMemoryUsage {
-		t.Error("cache.memoryUsage should've increased")
+	if cache.MemoryUsage() <= previousCacheMemoryUsage {
+		t.Error("cache.MemoryUsage() should've increased")
 	}
-	previousCacheMemoryUsage = cache.memoryUsage
+	previousCacheMemoryUsage = cache.MemoryUsage()
 	cache.Delete("2")
-	if cache.memoryUsage >= previousCacheMemoryUsage {
-		t.Error("cache.memoryUsage should've decreased")
+	if cache.MemoryUsage() >= previousCacheMemoryUsage {
+		t.Error("cache.MemoryUsage() should've decreased")
 	}
-	previousCacheMemoryUsage = cache.memoryUsage
+	previousCacheMemoryUsage = cache.MemoryUsage()
 	cache.Set("1", 1)
-	if cache.memoryUsage != previousCacheMemoryUsage {
-		t.Error("cache.memoryUsage shouldn't have changed, because the entry didn't change")
+	if cache.MemoryUsage() != previousCacheMemoryUsage {
+		t.Error("cache.MemoryUsage() shouldn't have changed, because the entry didn't change")
 	}
-	previousCacheMemoryUsage = cache.memoryUsage
+	previousCacheMemoryUsage = cache.MemoryUsage()
 	cache.Delete("3")
-	if cache.memoryUsage >= previousCacheMemoryUsage {
-		t.Error("cache.memoryUsage should've decreased")
+	if cache.MemoryUsage() >= previousCacheMemoryUsage {
+		t.Error("cache.MemoryUsage() should've decreased")
 	}
-	previousCacheMemoryUsage = cache.memoryUsage
+	previousCacheMemoryUsage = cache.MemoryUsage()
 	cache.Delete("4")
-	if cache.memoryUsage >= previousCacheMemoryUsage {
-		t.Error("cache.memoryUsage should've decreased")
+	if cache.MemoryUsage() >= previousCacheMemoryUsage {
+		t.Error("cache.MemoryUsage() should've decreased")
 	}
-	previousCacheMemoryUsage = cache.memoryUsage
+	previousCacheMemoryUsage = cache.MemoryUsage()
 	cache.Delete("1")
-	if cache.memoryUsage >= previousCacheMemoryUsage || cache.memoryUsage != 0 {
-		t.Error("cache.memoryUsage should've been 0")
+	if cache.MemoryUsage() >= previousCacheMemoryUsage || cache.memoryUsage != 0 {
+		t.Error("cache.MemoryUsage() should've been 0")
 	}
-	previousCacheMemoryUsage = cache.memoryUsage
+	previousCacheMemoryUsage = cache.MemoryUsage()
 	cache.Set("1", "v4lu3")
-	if cache.memoryUsage <= previousCacheMemoryUsage {
-		t.Error("cache.memoryUsage should've increased")
+	if cache.MemoryUsage() <= previousCacheMemoryUsage {
+		t.Error("cache.MemoryUsage() should've increased")
 	}
-	previousCacheMemoryUsage = cache.memoryUsage
+	previousCacheMemoryUsage = cache.MemoryUsage()
 	cache.Set("1", "value")
-	if cache.memoryUsage != previousCacheMemoryUsage {
-		t.Error("cache.memoryUsage shouldn't have changed")
+	if cache.MemoryUsage() != previousCacheMemoryUsage {
+		t.Error("cache.MemoryUsage() shouldn't have changed")
 	}
-	previousCacheMemoryUsage = cache.memoryUsage
+	previousCacheMemoryUsage = cache.MemoryUsage()
 	cache.Set("1", true)
-	if cache.memoryUsage >= previousCacheMemoryUsage {
-		t.Error("cache.memoryUsage should've decreased, because a bool uses less memory than a string")
+	if cache.MemoryUsage() >= previousCacheMemoryUsage {
+		t.Error("cache.MemoryUsage() should've decreased, because a bool uses less memory than a string")
 	}
 }
