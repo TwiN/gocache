@@ -286,6 +286,18 @@ func TestPING(t *testing.T) {
 	}
 }
 
+func TestQUIT(t *testing.T) {
+	testClient := redis.NewClient(&redis.Options{
+		Addr: "localhost:16162",
+		DB:   0,
+	})
+	numberOfConnections := server.numberOfConnections
+	testClient.Do("QUIT").Val()
+	if numberOfConnections == server.numberOfConnections {
+		t.Error("connection should've been closed")
+	}
+}
+
 func TestECHO(t *testing.T) {
 	if client.Echo("hey").Val() != "hey" {
 		t.Error("Server should've been able to echo")
@@ -403,6 +415,13 @@ func TestTTLWithKeyThatDoesNotHaveAnExpiration(t *testing.T) {
 	// of -1s
 	if ttl.Seconds() != -1 {
 		t.Errorf("expected TTL to return -1 because the key does not have an expiration time, got %v", ttl.Seconds())
+	}
+}
+
+func TestUnknownCommand(t *testing.T) {
+	c := client.Do("INVALID_COMMAND")
+	if !strings.Contains(c.Err().Error(), "unknown command") {
+		t.Error("Expected server to return an error")
 	}
 }
 
