@@ -85,7 +85,7 @@ func TestJanitorIsLoopingProperly(t *testing.T) {
 	if cache.Count() != JanitorMaxIterationsPerShift+3 {
 		t.Error("The janitor shouldn't have had enough time to remove anything from the cache yet", cache.Count())
 	}
-	time.Sleep(JanitorMinShiftBackOff * 6)
+	time.Sleep(JanitorMinShiftBackOff * 8)
 	if cache.Count() != JanitorMaxIterationsPerShift {
 		t.Error("The janitor should've deleted 3 entries")
 	}
