@@ -20,12 +20,17 @@ const (
 
 // Server is a cache server using gocache as cache and RESP (Redis bindings) as server
 type Server struct {
+	// Cache is the actual cache
 	Cache *gocache.Cache
 
+	// Port is the port that the server will listen on
 	Port int
 
+	// AutoSaveInterval is the interval at which the server will automatically save the Cache
 	AutoSaveInterval time.Duration
-	AutoSaveFile     string
+
+	// AutoSaveFile is the file in which the cache will be persisted every AutoSaveInterval
+	AutoSaveFile string
 
 	startTime           time.Time
 	numberOfConnections int
