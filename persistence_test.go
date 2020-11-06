@@ -28,6 +28,12 @@ func TestCache_SaveToFile(t *testing.T) {
 	if err != nil {
 		t.Fatal("shouldn't have returned an error, but got:", err.Error())
 	}
+	if cache.MaxSize() != DefaultMaxSize {
+		t.Errorf("expected MaxSize to be %d, but got %d", DefaultMaxSize, cache.MaxSize())
+	}
+	if cache.MaxMemoryUsage() != 0 {
+		t.Error("expected MaxMemoryUsage to be 0, but got", cache.MaxMemoryUsage())
+	}
 	if numberOfEntriesEvicted != 0 {
 		t.Error("expected 0 entries to have been evicted, but got", numberOfEntriesEvicted)
 	}
@@ -130,7 +136,7 @@ func TestCache_ReadFromFile(t *testing.T) {
 	cache.Set("eviction-test", 1)
 }
 
-func TestCache_ReadFromFileWithMaxMemoryUsageEvictions(t *testing.T) {
+func TestCache_ReadFromFileWithMaxMemoryUsageAndMaxSizeEvictions(t *testing.T) {
 	Debug = true
 	defer os.Remove(TestCacheFile)
 	cache := NewCache()
@@ -146,6 +152,12 @@ func TestCache_ReadFromFileWithMaxMemoryUsageEvictions(t *testing.T) {
 	numberOfEntriesEvicted, err := cache.ReadFromFile(TestCacheFile)
 	if err != nil {
 		panic(err)
+	}
+	if cache.MaxSize() != DefaultMaxSize {
+		t.Errorf("expected MaxSize to be %d, but got %d", DefaultMaxSize, cache.MaxSize())
+	}
+	if cache.MaxMemoryUsage() != 5*Kilobyte {
+		t.Error("expected MaxMemoryUsage to be 5KB, but got", cache.MaxMemoryUsage())
 	}
 	if numberOfEntriesEvicted != 26 {
 		t.Error("expected 26 entries to have been evicted, but got", numberOfEntriesEvicted)
@@ -183,10 +195,16 @@ func TestCache_ReadFromFileWithNoMaxSizeOrMaxMemoryUsage(t *testing.T) {
 		panic(err)
 	}
 	cache.Clear()
-	cache = NewCache()
+	cache = NewCache().WithMaxSize(NoMaxSize).WithMaxMemoryUsage(NoMaxMemoryUsage)
 	numberOfEntriesEvicted, err := cache.ReadFromFile(TestCacheFile)
 	if err != nil {
 		panic(err)
+	}
+	if cache.MaxSize() != 0 {
+		t.Error("expected MaxSize to be 0, but got", cache.MaxSize())
+	}
+	if cache.MaxMemoryUsage() != 0 {
+		t.Error("expected MaxMemoryUsage to be 0, but got", cache.MaxMemoryUsage())
 	}
 	if numberOfEntriesEvicted != 0 {
 		t.Error("expected 0 entries to have been evicted, but got", numberOfEntriesEvicted)
