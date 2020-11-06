@@ -87,6 +87,47 @@ func TestCache_ReadFromFile(t *testing.T) {
 	cache.Set("eviction-test", 1)
 }
 
+func TestCache_ReadFromFileWithMaxMemoryEvictions(t *testing.T) {
+	Debug = true
+	defer os.Remove(TestCacheFile)
+	cache := NewCache()
+	for n := 0; n < 100; n++ {
+		cache.Set(strconv.Itoa(n), fmt.Sprintf("v%d", n))
+	}
+	err := cache.SaveToFile(TestCacheFile)
+	if err != nil {
+		panic(err)
+	}
+	cache.Clear()
+	cache = NewCache().WithMaxMemoryUsage(5 * Kilobyte)
+	numberOfEntriesEvicted, err := cache.ReadFromFile(TestCacheFile)
+	if err != nil {
+		panic(err)
+	}
+	if numberOfEntriesEvicted != 26 {
+		t.Error("expected 26 entries to have been evicted, but got", numberOfEntriesEvicted)
+	}
+	if cache.Count() != 74 {
+		t.Error("expected newCache to have 74 entries, but got", cache.Count())
+	}
+	// Make sure all entries have the right values and can still be GETable
+	for key, value := range cache.entries {
+		expectedValue := fmt.Sprintf("v%s", key)
+		if value.Value != expectedValue {
+			t.Errorf("key %s should've had value '%s', but had '%s' instead", key, expectedValue, value.Value)
+		}
+		valueFromCacheGet, _ := cache.Get(key)
+		if valueFromCacheGet != expectedValue {
+			t.Errorf("key %s should've had value '%s', but had '%s' instead", key, expectedValue, value.Value)
+		}
+	}
+	// Make sure eviction still works
+	cache.evict()
+	// Make sure we can create new entries
+	cache.Set("eviction-test", 1)
+	Debug = false
+}
+
 func TestCache_SaveToFileStruct(t *testing.T) {
 	defer os.Remove(TestCacheFile)
 	cache := NewCache()
