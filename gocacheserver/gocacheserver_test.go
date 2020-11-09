@@ -242,6 +242,13 @@ func TestMSET(t *testing.T) {
 	}
 }
 
+func TestMSETWithInvalidNumberOfArgs(t *testing.T) {
+	c := client.Do("MSET")
+	if !strings.Contains(c.Err().Error(), "wrong number of arguments") {
+		t.Error("Expected server to return an error")
+	}
+}
+
 func TestEXPIRE(t *testing.T) {
 	defer server.Cache.Clear()
 	client.Set("key", "value", 0)
@@ -369,6 +376,13 @@ func TestECHO(t *testing.T) {
 	}
 }
 
+func TestECHOWithInvalidNumberOfArgs(t *testing.T) {
+	c := client.Do("ECHO")
+	if !strings.Contains(c.Err().Error(), "wrong number of arguments") {
+		t.Error("Expected server to return an error")
+	}
+}
+
 func TestINFO(t *testing.T) {
 	output := client.Info().Val()
 	if len(output) < 200 {
@@ -486,6 +500,13 @@ func TestSCANWithInvalidCursor(t *testing.T) {
 func TestSCANWithInvalidCount(t *testing.T) {
 	c := client.Do("SCAN", 0, "COUNT", "not-a-valid-count")
 	if c.Err().Error() != "ERR value is not an integer or out of range" {
+		t.Error("Expected server to return an error")
+	}
+}
+
+func TestSCANWithSyntaxError(t *testing.T) {
+	c := client.Do("SCAN", 0, "COUNT", 10, "INVALID-ARGUMENT", "1234")
+	if c.Err().Error() != "ERR syntax error" {
 		t.Error("Expected server to return an error")
 	}
 }
