@@ -766,6 +766,20 @@ func TestCache_Clear(t *testing.T) {
 	}
 }
 
+func TestCache_WithMaxSize(t *testing.T) {
+	cache := NewCache().WithMaxSize(1234)
+	if cache.MaxSize() != 1234 {
+		t.Error("expected cache to have a maximum size of 1234")
+	}
+}
+
+func TestCache_WithMaxSizeAndNegativeValue(t *testing.T) {
+	cache := NewCache().WithMaxSize(-10)
+	if cache.MaxSize() != NoMaxSize {
+		t.Error("expected cache to have no maximum size")
+	}
+}
+
 func TestCache_WithMaxMemoryUsage(t *testing.T) {
 	const ValueSize = Kilobyte
 	cache := NewCache().WithMaxSize(0).WithMaxMemoryUsage(Kilobyte * 64)
@@ -788,7 +802,7 @@ func TestCache_WithMaxMemoryUsageWhenAddingAnEntryThatCausesMoreThanOneEviction(
 	}
 }
 
-func TestCache_WithMaxMemoryUsageWhenNegativeMaxMemoryUsageIsPassed(t *testing.T) {
+func TestCache_WithMaxMemoryUsageAndNegativeValue(t *testing.T) {
 	cache := NewCache().WithMaxSize(0).WithMaxMemoryUsage(-1234)
 	if cache.MaxMemoryUsage() != NoMaxMemoryUsage {
 		t.Error("attempting to set a negative max memory usage should force MaxMemoryUsage to NoMaxMemoryUsage")
