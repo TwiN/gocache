@@ -65,6 +65,34 @@ func TestParityCacheSetClientGet(t *testing.T) {
 	}
 }
 
+func TestGET(t *testing.T) {
+	defer server.Cache.Clear()
+	server.Cache.Set("key", "value")
+	// Get a key that exists
+	value, err := client.Get("key").Result()
+	if err != nil {
+		t.Error(err)
+	}
+	if value != "value" {
+		t.Errorf("expected: %s, but got: %s", "value", value)
+	}
+	// Get a key that does not exist
+	value, err = client.Get("key-that-does-not-exist").Result()
+	if err == nil {
+		t.Error("should've returned an error because the key does not exist in the cache")
+	}
+	if value != "" {
+		t.Errorf("expected: %s, but got: %s", "(nil)", value)
+	}
+}
+
+func TestGETWithInvalidNumberOfArgs(t *testing.T) {
+	c := client.Do("GET")
+	if !strings.Contains(c.Err().Error(), "wrong number of arguments") {
+		t.Error("Expected server to return an error")
+	}
+}
+
 func TestSET(t *testing.T) {
 	defer server.Cache.Clear()
 	const ExpectedInitialValue = "v"
@@ -89,7 +117,7 @@ func TestSET(t *testing.T) {
 	}
 }
 
-func TestSET_PX(t *testing.T) {
+func TestSETWithPX(t *testing.T) {
 	defer server.Cache.Clear()
 	const ExpectedValue = "v"
 	client.Set("key", ExpectedValue, 9999*time.Millisecond)
@@ -106,7 +134,7 @@ func TestSET_PX(t *testing.T) {
 	}
 }
 
-func TestSET_EX(t *testing.T) {
+func TestSETWithEX(t *testing.T) {
 	defer server.Cache.Clear()
 	const ExpectedValue = "v"
 	client.Set("key", ExpectedValue, 10*time.Second)
@@ -120,6 +148,13 @@ func TestSET_EX(t *testing.T) {
 	ttl, _ := server.Cache.TTL("key")
 	if ttl.Seconds() < 8 || ttl.Seconds() > 10 {
 		t.Error("expected TTL of ~10s")
+	}
+}
+
+func TestSETWithSyntaxError(t *testing.T) {
+	c := client.Do("SET", "key", "value", "invalid-argument", "123")
+	if !strings.Contains(c.Err().Error(), "syntax error") {
+		t.Error("Expected server to return an error")
 	}
 }
 
@@ -171,6 +206,28 @@ func TestMGET(t *testing.T) {
 	}
 	if c.Val()[1] != "v3" {
 		t.Error("Expected second value to be v3")
+	}
+}
+
+func TestMGETWithOneKeyThatDoesNotExist(t *testing.T) {
+	defer server.Cache.Clear()
+	server.Cache.Set("k1", "v1")
+	c := client.MGet("k1", "k2")
+	if len(c.Val()) != 2 {
+		t.Error("Expected 2 keys to be returned")
+	}
+	if c.Val()[0] != "v1" {
+		t.Error("Expected first value to be v1")
+	}
+	if c.Val()[1] != nil {
+		t.Error("Expected second value to be nil")
+	}
+}
+
+func TestMGETWithInvalidNumberOfArgs(t *testing.T) {
+	c := client.Do("MGET")
+	if !strings.Contains(c.Err().Error(), "wrong number of arguments") {
+		t.Error("Expected server to return an error")
 	}
 }
 
