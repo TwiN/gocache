@@ -61,6 +61,7 @@ func TestEntry_SizeInBytes(t *testing.T) {
 	testSizeInBytes(t, "k", struct{ A string }{A: "hello"}, 72)
 	testSizeInBytes(t, "k", struct{ A, B string }{A: "hello", B: "world"}, 78)
 	testSizeInBytes(t, "k", nil, 70)
+	testSizeInBytes(t, "k", make([]interface{}, 5), 170)
 }
 
 func testSizeInBytes(t *testing.T, key string, value interface{}, expectedSize int) {
