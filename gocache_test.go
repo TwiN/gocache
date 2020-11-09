@@ -136,7 +136,7 @@ func testGetKeysByPattern(t *testing.T, keys []string, pattern string, limit, ex
 }
 
 func TestCache_Set(t *testing.T) {
-	cache := NewCache().WithMaxSize(10)
+	cache := NewCache().WithMaxSize(NoMaxSize)
 	cache.Set("key", "value")
 	value, ok := cache.Get("key")
 	if !ok {
@@ -156,7 +156,7 @@ func TestCache_Set(t *testing.T) {
 }
 
 func TestCache_SetDifferentTypesOfData(t *testing.T) {
-	cache := NewCache().WithMaxSize(10)
+	cache := NewCache().WithMaxSize(NoMaxSize)
 	cache.Set("key", 1)
 	value, ok := cache.Get("key")
 	if !ok {
@@ -176,7 +176,7 @@ func TestCache_SetDifferentTypesOfData(t *testing.T) {
 }
 
 func TestCache_SetGetIntValue(t *testing.T) {
-	cache := NewCache().WithMaxSize(10)
+	cache := NewCache().WithMaxSize(NoMaxSize)
 	cache.Set("key", 1)
 	value, ok := cache.Get("key")
 	if !ok {
@@ -196,7 +196,7 @@ func TestCache_SetGetIntValue(t *testing.T) {
 }
 
 func TestCache_SetGetBool(t *testing.T) {
-	cache := NewCache().WithMaxSize(10)
+	cache := NewCache().WithMaxSize(NoMaxSize)
 	cache.Set("key", true)
 	value, ok := cache.Get("key")
 	if !ok {
@@ -208,7 +208,7 @@ func TestCache_SetGetBool(t *testing.T) {
 }
 
 func TestCache_SetGetByteSlice(t *testing.T) {
-	cache := NewCache().WithMaxSize(10)
+	cache := NewCache().WithMaxSize(NoMaxSize)
 	cache.Set("key", []byte("hey"))
 	value, ok := cache.Get("key")
 	if !ok {
@@ -220,7 +220,7 @@ func TestCache_SetGetByteSlice(t *testing.T) {
 }
 
 func TestCache_SetGetStringSlice(t *testing.T) {
-	cache := NewCache().WithMaxSize(10)
+	cache := NewCache().WithMaxSize(NoMaxSize)
 	cache.Set("key", []string{"john", "doe"})
 	value, ok := cache.Get("key")
 	if !ok {
@@ -235,7 +235,7 @@ func TestCache_SetGetStringSlice(t *testing.T) {
 }
 
 func TestCache_SetGetStruct(t *testing.T) {
-	cache := NewCache().WithMaxSize(10)
+	cache := NewCache().WithMaxSize(NoMaxSize)
 	type Custom struct {
 		Int     int
 		Uint    uint
@@ -282,7 +282,7 @@ func TestCache_SetGetStruct(t *testing.T) {
 }
 
 func TestCache_SetAll(t *testing.T) {
-	cache := NewCache().WithMaxSize(10)
+	cache := NewCache().WithMaxSize(NoMaxSize)
 	cache.SetAll(map[string]interface{}{"k1": "v1", "k2": "v2"})
 	value, ok := cache.Get("k1")
 	if !ok {
@@ -305,6 +305,27 @@ func TestCache_SetAll(t *testing.T) {
 	}
 	if value != "updated" {
 		t.Errorf("expected: %s, but got: %s", "updated", value)
+	}
+}
+
+func TestCache_SetWithTTL(t *testing.T) {
+	cache := NewCache().WithMaxSize(NoMaxSize)
+	cache.SetWithTTL("key", "value", NoExpiration)
+	value, ok := cache.Get("key")
+	if !ok {
+		t.Error("expected key to exist")
+	}
+	if value != "value" {
+		t.Errorf("expected: %s, but got: %s", "value", value)
+	}
+}
+
+func TestCache_SetWithTTLWhenTTLIsNegative(t *testing.T) {
+	cache := NewCache().WithMaxSize(NoMaxSize)
+	cache.SetWithTTL("key", "value", -12345)
+	_, ok := cache.Get("key")
+	if ok {
+		t.Error("expected key to not exist, because there's no point in creating a cache entry that has a negative TTL")
 	}
 }
 
