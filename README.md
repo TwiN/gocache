@@ -5,7 +5,6 @@
 [![codecov](https://codecov.io/gh/TwinProduction/gocache/branch/master/graph/badge.svg)](https://codecov.io/gh/TwinProduction/gocache)
 [![Go version](https://img.shields.io/github/go-mod/go-version/TwinProduction/gocache.svg)](https://github.com/TwinProduction/gocache)
 [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](https://godoc.org/github.com/TwinProduction/gocache)
-[![Docker pulls](https://img.shields.io/docker/pulls/twinproduction/gocache-server.svg)](https://cloud.docker.com/repository/docker/twinproduction/gocache-server)
 
 gocache is an easy-to-use, high-performance, lightweight and thread-safe (goroutine-safe) in-memory key-value cache 
 with support for LRU and FIFO eviction policies as well as expiration, bulk operations and even persistence to file.
@@ -330,12 +329,14 @@ Any Redis client should be able to interact with the server, though only the fol
 
 
 ## Running the server with Docker
+[![Docker pulls](https://img.shields.io/docker/pulls/twinproduction/gocache-server.svg)](https://cloud.docker.com/repository/docker/twinproduction/gocache-server)
+
 To build it locally, refer to the Makefile's `docker-build` and `docker-run` steps.
 
 Note that the server version of gocache is still under development.
 
 ```
-docker run --name gocache-server -p 6379:6379 twinproduction/gocache-server:v0.1.0
+docker run --name gocache-server -p 6379:6379 twinproduction/gocache-server
 ```
 
 
