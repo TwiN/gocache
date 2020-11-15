@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/TwinProduction/gocache"
-	"github.com/TwinProduction/gocache/gocacheserver"
 	"log"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/TwinProduction/gocache"
+	"github.com/TwinProduction/gocache/gocacheserver"
 )
 
 func main() {
