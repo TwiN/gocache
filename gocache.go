@@ -104,6 +104,9 @@ func (cache *Cache) WithMaxSize(maxSize int) *Cache {
 	if maxSize < 0 {
 		maxSize = NoMaxSize
 	}
+	if maxSize != NoMaxSize && cache.Count() == 0 {
+		cache.entries = make(map[string]*Entry, maxSize)
+	}
 	cache.maxSize = maxSize
 	return cache
 }

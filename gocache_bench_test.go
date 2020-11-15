@@ -29,6 +29,7 @@ func BenchmarkMap_SetMediumValue(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		m[strconv.Itoa(n)] = value
 	}
+	b.ReportAllocs()
 }
 
 func BenchmarkMap_SetLargeValue(b *testing.B) {
@@ -37,6 +38,7 @@ func BenchmarkMap_SetLargeValue(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		m[strconv.Itoa(n)] = value
 	}
+	b.ReportAllocs()
 }
 
 //func BenchmarkPatrickmnGoCache_SetSmallValue(b *testing.B) {
@@ -68,6 +70,7 @@ func BenchmarkCache_Get(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		cache.Get(strconv.Itoa(n))
 	}
+	b.ReportAllocs()
 }
 
 func BenchmarkCache_SetSmallValue(b *testing.B) {
@@ -85,6 +88,7 @@ func BenchmarkCache_SetMediumValue(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		cache.Set(strconv.Itoa(n), value)
 	}
+	b.ReportAllocs()
 }
 
 func BenchmarkCache_SetLargeValue(b *testing.B) {
@@ -93,6 +97,7 @@ func BenchmarkCache_SetLargeValue(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		cache.Set(strconv.Itoa(n), value)
 	}
+	b.ReportAllocs()
 }
 
 func BenchmarkCache_GetUsingLRU(b *testing.B) {
@@ -100,6 +105,7 @@ func BenchmarkCache_GetUsingLRU(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		cache.Get(strconv.Itoa(n))
 	}
+	b.ReportAllocs()
 }
 
 func BenchmarkCache_SetSmallValueUsingLRU(b *testing.B) {
@@ -108,6 +114,7 @@ func BenchmarkCache_SetSmallValueUsingLRU(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		cache.Set(strconv.Itoa(n), value)
 	}
+	b.ReportAllocs()
 }
 
 func BenchmarkCache_SetMediumValueUsingLRU(b *testing.B) {
@@ -116,6 +123,7 @@ func BenchmarkCache_SetMediumValueUsingLRU(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		cache.Set(strconv.Itoa(n), value)
 	}
+	b.ReportAllocs()
 }
 
 func BenchmarkCache_SetLargeValueUsingLRU(b *testing.B) {
@@ -124,6 +132,7 @@ func BenchmarkCache_SetLargeValueUsingLRU(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		cache.Set(strconv.Itoa(n), value)
 	}
+	b.ReportAllocs()
 }
 
 func BenchmarkCache_SetSmallValueWhenUsingMaxMemoryUsage(b *testing.B) {
@@ -132,6 +141,7 @@ func BenchmarkCache_SetSmallValueWhenUsingMaxMemoryUsage(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		cache.Set(strconv.Itoa(n), value)
 	}
+	b.ReportAllocs()
 }
 
 func BenchmarkCache_SetMediumValueWhenUsingMaxMemoryUsage(b *testing.B) {
@@ -140,6 +150,7 @@ func BenchmarkCache_SetMediumValueWhenUsingMaxMemoryUsage(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		cache.Set(strconv.Itoa(n), value)
 	}
+	b.ReportAllocs()
 }
 
 func BenchmarkCache_SetLargeValueWhenUsingMaxMemoryUsage(b *testing.B) {
@@ -148,6 +159,7 @@ func BenchmarkCache_SetLargeValueWhenUsingMaxMemoryUsage(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		cache.Set(strconv.Itoa(n), value)
 	}
+	b.ReportAllocs()
 }
 
 // go test -cpuprofile cpu.prof -memprofile mem.prof -bench ^\QBenchmarkCache_SetSmallValueWhenUsingMaxMemoryUsage\E$
@@ -227,14 +239,19 @@ func writeToCache(b *testing.B, cache *Cache, value string) {
 	for n := 0; n < b.N; n++ {
 		cache.Set(strconv.Itoa(n), value)
 	}
+	b.ReportAllocs()
 }
 
-func BenchmarkCache_GetAndSetConcurrently(b *testing.B) {
+func BenchmarkCache_GetAndSetMultipleConcurrently(b *testing.B) {
 	data := map[string]string{
 		"k1": "v1",
 		"k2": "v2",
 		"k3": "v3",
 		"k4": "v4",
+		"k5": "v5",
+		"k6": "v6",
+		"k7": "v7",
+		"k8": "v8",
 	}
 	cache := NewCache().WithMaxSize(NoMaxSize)
 
@@ -246,14 +263,19 @@ func BenchmarkCache_GetAndSetConcurrently(b *testing.B) {
 			}
 		}
 	})
+	b.ReportAllocs()
 }
 
-//func BenchmarkPatrickmnGoCache_GetAndSetConcurrently(b *testing.B) {
+//func BenchmarkPatrickmnGoCache_GetAndSetMultipleConcurrently(b *testing.B) {
 //	data := map[string]string{
 //		"k1": "v1",
 //		"k2": "v2",
 //		"k3": "v3",
 //		"k4": "v4",
+//		"k5": "v5",
+//		"k6": "v6",
+//		"k7": "v7",
+//		"k8": "v8",
 //	}
 //	cache := patrickmnGoCache.New(0, 0)
 //
@@ -278,6 +300,7 @@ func BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndLRU(b *testing.B) {
 			_, _ = cache.Get(k)
 		}
 	})
+	b.ReportAllocs()
 }
 
 func BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndFIFO(b *testing.B) {
@@ -291,6 +314,7 @@ func BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndFIFO(b *testing.B) {
 			_, _ = cache.Get(k)
 		}
 	})
+	b.ReportAllocs()
 }
 
 func BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndNoEvictionAndLRU(b *testing.B) {
@@ -304,6 +328,7 @@ func BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndNoEvictionAndLRU(b *te
 			_, _ = cache.Get(k)
 		}
 	})
+	b.ReportAllocs()
 }
 
 func BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndNoEvictionAndFIFO(b *testing.B) {
@@ -317,6 +342,7 @@ func BenchmarkCache_GetAndSetConcurrentlyWithRandomKeysAndNoEvictionAndFIFO(b *t
 			_, _ = cache.Get(k)
 		}
 	})
+	b.ReportAllocs()
 }
 
 func BenchmarkCache_GetAndSetConcurrentlyWithFrequentEvictionsAndLRU(b *testing.B) {
@@ -330,6 +356,7 @@ func BenchmarkCache_GetAndSetConcurrentlyWithFrequentEvictionsAndLRU(b *testing.
 			_, _ = cache.Get(k)
 		}
 	})
+	b.ReportAllocs()
 }
 
 func BenchmarkCache_GetAndSetConcurrentlyWithFrequentEvictionsAndFIFO(b *testing.B) {
@@ -343,6 +370,7 @@ func BenchmarkCache_GetAndSetConcurrentlyWithFrequentEvictionsAndFIFO(b *testing
 			_, _ = cache.Get(k)
 		}
 	})
+	b.ReportAllocs()
 }
 
 func BenchmarkCache_GetConcurrentlyWithLRU(b *testing.B) {
@@ -364,6 +392,7 @@ func BenchmarkCache_GetConcurrentlyWithLRU(b *testing.B) {
 			}
 		}
 	})
+	b.ReportAllocs()
 }
 
 func BenchmarkCache_GetConcurrentlyWithFIFO(b *testing.B) {
@@ -398,4 +427,5 @@ func BenchmarkCache_GetKeysThatDoNotExistConcurrently(b *testing.B) {
 			}
 		}
 	})
+	b.ReportAllocs()
 }
