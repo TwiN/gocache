@@ -3,14 +3,15 @@ package gocacheserver
 import (
 	"bytes"
 	"fmt"
-	"github.com/TwinProduction/gocache"
-	"github.com/tidwall/redcon"
 	"log"
 	"os"
 	"runtime"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/TwinProduction/gocache"
+	"github.com/tidwall/redcon"
 )
 
 const (
@@ -147,6 +148,10 @@ func (server *Server) Start() error {
 
 // Stop closes the Server
 func (server *Server) Stop() error {
+	if server.cacheServer == nil {
+		// If the cache server is nil, there's nothing to stop.
+		return nil
+	}
 	return server.cacheServer.Close()
 }
 

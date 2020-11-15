@@ -4,12 +4,13 @@ package gocacheserver
 
 import (
 	"fmt"
-	"github.com/TwinProduction/gocache"
-	"github.com/go-redis/redis"
 	"os"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/TwinProduction/gocache"
+	"github.com/go-redis/redis"
 )
 
 var (
@@ -592,5 +593,12 @@ func TestServer_StartWhenAlreadyStarted(t *testing.T) {
 	err := server.Start()
 	if err == nil {
 		t.Error("expected an error because the server has already been started")
+	}
+}
+
+func TestServer_StopWhenNotStarted(t *testing.T) {
+	err := server.Stop()
+	if err != nil {
+		t.Error("expected nothing to happen")
 	}
 }
