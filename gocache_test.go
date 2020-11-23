@@ -175,7 +175,7 @@ func TestCache_SetDifferentTypesOfData(t *testing.T) {
 	}
 }
 
-func TestCache_SetGetIntValue(t *testing.T) {
+func TestCache_SetGetInt(t *testing.T) {
 	cache := NewCache().WithMaxSize(NoMaxSize)
 	cache.Set("key", 1)
 	value, ok := cache.Get("key")
