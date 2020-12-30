@@ -105,7 +105,7 @@ cache.Set("key", struct{ Text string }{Test: "value"})
 
 #### Getting an entry
 ```go
-value, ok := cache.Get("key")
+value, exists := cache.Get("key")
 ```
 You can also get multiple entries by using `cache.GetAll([]string{"key1", "key2"})`
 
@@ -121,8 +121,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/TwinProduction/gocache"
 	"time"
+
+    "github.com/TwinProduction/gocache"
 )
 
 func main() {
