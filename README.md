@@ -137,8 +137,8 @@ func main() {
 
 	value, exists := cache.Get("key")
 	fmt.Printf("[Get] key=key; value=%s; exists=%v\n", value, exists)
-	for key, value := range cache.GetAll([]string{"k1", "k2", "k3"}) {
-		fmt.Printf("[GetAll] key=%s; value=%s\n", key, value)
+	for key, value := range cache.GetByKeys([]string{"k1", "k2", "k3"}) {
+		fmt.Printf("[GetByKeys] key=%s; value=%s\n", key, value)
 	}
 	for _, key := range cache.GetKeysByPattern("key*", 0) {
 		fmt.Printf("[GetKeysByPattern] key=%s\n", key)
@@ -175,9 +175,9 @@ func main() {
 
 ```
 [Get] key=key; value=value; exists=true
-[GetAll] key=k2; value=v2
-[GetAll] key=k3; value=v3
-[GetAll] key=k1; value=v1
+[GetByKeys] key=k2; value=v2
+[GetByKeys] key=k3; value=v3
+[GetByKeys] key=k1; value=v1
 [GetKeysByPattern] key=key
 [GetKeysByPattern] key=key-with-ttl
 Cache size before persisting cache to file: 5
