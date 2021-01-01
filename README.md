@@ -108,7 +108,7 @@ cache.Set("key", struct{ Text string }{Test: "value"})
 ```go
 value, exists := cache.Get("key")
 ```
-You can also get multiple entries by using `cache.GetAll([]string{"key1", "key2"})`
+You can also get multiple entries by using `cache.GetByKeys([]string{"key1", "key2"})`
 
 #### Deleting an entry
 ```go
