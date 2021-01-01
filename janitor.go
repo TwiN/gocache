@@ -23,9 +23,10 @@ const (
 )
 
 // StartJanitor starts the janitor on a different goroutine
-// The janitor's job is to delete expired keys in the background.
+// The janitor's job is to delete expired keys in the background, in other words, it takes care of passive eviction.
 // It can be stopped by calling Cache.StopJanitor.
-// If you do not start the janitor, expired keys will only be deleted when they are accessed through Get
+// If you do not start the janitor, expired keys will only be deleted when they are accessed through Get, GetByKeys, or
+// GetAll.
 func (cache *Cache) StartJanitor() error {
 	if cache.stopJanitor != nil {
 		return ErrJanitorAlreadyRunning

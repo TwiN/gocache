@@ -82,7 +82,8 @@ cache.StartJanitor()
 | SetAll             | Same as `Set`, but in bulk
 | SetWithTTL         | Creates or updates a cache entry with the given key, value and expiration time. If the max size after the aforementioned operation is above the configured max size, the tail will be evicted. Depending on the eviction policy, the tail is defined as the oldest 
 | Get                | Gets a cache entry by its key.
-| GetAll             | Gets a map of entries by their keys. The resulting map will contain all keys, even if some of the keys in the slice passed as parameter were not present in the cache.  
+| GetByKeys          | Gets a map of entries by their keys. The resulting map will contain all keys, even if some of the keys in the slice passed as parameter were not present in the cache.  
+| GetAll             | Gets all cache entries.
 | GetKeysByPattern   | Retrieves a slice of keys that matches a given pattern.
 | Delete             | Removes a key from the cache.
 | DeleteAll          | Removes multiple keys from the cache.
@@ -248,6 +249,17 @@ you'll be fine.
 
 
 ## Eviction
+Before getting into the options that determine when an eviction is triggered, you may want to be aware that there are
+two ways that eviction can take place:
+- Active eviction
+- Passive eviction
+
+**Active eviction** happens when an attempt is made to access the value of a cache entry that expired. `Get`, 
+`GetByKeys` and `GetAll` are the only functions that trigger active eviction.
+
+**Passive eviction** runs in the background and is managed by the janitor. If you do not start the janitor, there will 
+be no passive eviction.
+
 ### MaxSize
 Eviction by MaxSize is the default behavior, and is also the most efficient.
 
@@ -258,7 +270,7 @@ cache := gocache.NewCache().WithMaxSize(1000)
 This means that whenever an operation causes the total size of the cache to go above 1000, the tail will be evicted.
 
 ### MaxMemoryUsage
-Eviction by MaxMemoryUsage is **disabled by default**, and is still a work in progress.
+Eviction by MaxMemoryUsage is **disabled by default**, and is in alpha.
 
 The code below will create a cache that has a maximum memory usage of 50MB:
 ```go
@@ -268,7 +280,7 @@ This means that whenever an operation causes the total memory usage of the cache
 will be evicted.
 
 Unlike evictions caused by reaching the MaxSize, evictions triggered by MaxMemoryUsage may lead to multiple entries
-being evicted in a row. The reason for this is that if, for instance, you had 500 entries of 0.1MB each and you suddenly added 
+being evicted in a row. The reason for this is that if, for instance, you had 100 entries of 0.1MB each and you suddenly added 
 a single entry of 10MB, 100 entries would need to be evicted to make enough space for that new big entry.
 
 It's very important to keep in mind that eviction by MaxMemoryUsage is approximate.
