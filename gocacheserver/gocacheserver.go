@@ -257,7 +257,7 @@ func (server *Server) mget(cmd redcon.Command, conn redcon.Conn) {
 		}
 		keys = append(keys, string(cmd.Args[index]))
 	}
-	keyValues := server.Cache.GetAll(keys)
+	keyValues := server.Cache.GetByKeys(keys)
 	if len(keyValues) != len(keys) {
 		conn.WriteError(fmt.Sprintf("ERR internal error, expected %d keys, got %d instead", len(keys), len(keyValues)))
 	}

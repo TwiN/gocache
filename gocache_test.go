@@ -84,11 +84,11 @@ func TestCache_GetEntryThatHasNotExpiredYet(t *testing.T) {
 	}
 }
 
-func TestCache_GetAll(t *testing.T) {
+func TestCache_GetByKeys(t *testing.T) {
 	cache := NewCache().WithMaxSize(10)
 	cache.Set("key1", "value1")
 	cache.Set("key2", "value2")
-	keyValues := cache.GetAll([]string{"key1", "key2", "key3"})
+	keyValues := cache.GetByKeys([]string{"key1", "key2", "key3"})
 	if len(keyValues) != 3 {
 		t.Error("expected length of map to be 3")
 	}
@@ -100,6 +100,40 @@ func TestCache_GetAll(t *testing.T) {
 	}
 	if value, ok := keyValues["key3"]; !ok || value != nil {
 		t.Errorf("expected key3 to exist and be nil, but got: %s", value)
+	}
+}
+
+func TestCache_GetAll(t *testing.T) {
+	cache := NewCache().WithMaxSize(10)
+	cache.Set("key1", "value1")
+	cache.Set("key2", "value2")
+	keyValues := cache.GetAll()
+	if len(keyValues) != 2 {
+		t.Error("expected length of map to be 2")
+	}
+	if keyValues["key1"] != "value1" {
+		t.Errorf("expected: %s, but got: %s", "value1", keyValues["key1"])
+	}
+	if keyValues["key2"] != "value2" {
+		t.Errorf("expected: %s, but got: %s", "value2", keyValues["key2"])
+	}
+}
+
+func TestCache_GetAllWhenOneKeyIsExpired(t *testing.T) {
+	cache := NewCache().WithMaxSize(10)
+	cache.Set("key1", "value1")
+	cache.Set("key2", "value2")
+	cache.SetWithTTL("key3", "value3", time.Nanosecond)
+	time.Sleep(time.Millisecond)
+	keyValues := cache.GetAll()
+	if len(keyValues) != 2 {
+		t.Error("expected length of map to be 2")
+	}
+	if keyValues["key1"] != "value1" {
+		t.Errorf("expected: %s, but got: %s", "value1", keyValues["key1"])
+	}
+	if keyValues["key2"] != "value2" {
+		t.Errorf("expected: %s, but got: %s", "value2", keyValues["key2"])
 	}
 }
 
@@ -326,6 +360,25 @@ func TestCache_SetWithTTLWhenTTLIsNegative(t *testing.T) {
 	_, ok := cache.Get("key")
 	if ok {
 		t.Error("expected key to not exist, because there's no point in creating a cache entry that has a negative TTL")
+	}
+}
+
+func TestCache_SetWithTTLWhenTTLIsZero(t *testing.T) {
+	cache := NewCache().WithMaxSize(NoMaxSize)
+	cache.SetWithTTL("key", "value", 0)
+	_, ok := cache.Get("key")
+	if ok {
+		t.Error("expected key to not exist, because there's no point in creating a cache entry that has a TTL of 0")
+	}
+}
+
+func TestCache_SetWithTTLWhenTTLIsZeroAndEntryAlreadyExists(t *testing.T) {
+	cache := NewCache().WithMaxSize(NoMaxSize)
+	cache.SetWithTTL("key", "value", NoExpiration)
+	cache.SetWithTTL("key", "value", 0)
+	_, ok := cache.Get("key")
+	if ok {
+		t.Error("expected key to not exist, because there's the entry was created with a TTL of 0, so it should have been deleted immediately")
 	}
 }
 
@@ -696,7 +749,7 @@ func TestCache_DeleteAll(t *testing.T) {
 	cache.Set("1", []byte("1"))
 	cache.Set("2", []byte("2"))
 	cache.Set("3", []byte("3"))
-	if len(cache.GetAll([]string{"1", "2", "3"})) != 3 {
+	if len(cache.GetByKeys([]string{"1", "2", "3"})) != 3 {
 		t.Error("Expected keys 1, 2 and 3 to exist")
 	}
 	numberOfDeletedKeys := cache.DeleteAll([]string{"1", "2", "3"})

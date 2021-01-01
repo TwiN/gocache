@@ -154,13 +154,16 @@ func (cache *Cache) Set(key string, value interface{}) {
 }
 
 // SetWithTTL creates or updates a key with a given value and sets an expiration time (-1 is NoExpiration)
+//
+// The TTL provided must be greater than 0, or NoExpiration (-1). If a negative value that isn't -1 (NoExpiration) is
+// provided, the entry will not be created if the key doesn't exist
 func (cache *Cache) SetWithTTL(key string, value interface{}, ttl time.Duration) {
 	cache.mutex.Lock()
 	entry, ok := cache.get(key)
 	if !ok {
-		// A negative TTL that isn't -1 (NoExpiration) is an entry that will expire instantly,
+		// A negative TTL that isn't -1 (NoExpiration) or 0 is an entry that will expire instantly,
 		// so might as well just not create it in the first place
-		if ttl != NoExpiration && ttl < 0 {
+		if ttl != NoExpiration && ttl < 1 {
 			cache.mutex.Unlock()
 			return
 		}
@@ -182,6 +185,13 @@ func (cache *Cache) SetWithTTL(key string, value interface{}, ttl time.Duration)
 			cache.memoryUsage += entry.SizeInBytes()
 		}
 	} else {
+		// A negative TTL that isn't -1 (NoExpiration) or 0 is an entry that will expire instantly,
+		// so might as well just delete it immediately instead of updating it
+		if ttl != NoExpiration && ttl < 1 {
+			cache.delete(key)
+			cache.mutex.Unlock()
+			return
+		}
 		if cache.maxMemoryUsage != NoMaxMemoryUsage {
 			// Substract the old entry from the cache's memoryUsage
 			cache.memoryUsage -= entry.SizeInBytes()
@@ -257,12 +267,11 @@ func (cache *Cache) Get(key string) (interface{}, bool) {
 	return entry.Value, true
 }
 
-// GetAll retrieves multiple entries using the keys passed as parameter
-// All keys are returned in the map, regardless of whether they exist or not,
-// however, entries that do not exist in the cache will return nil, meaning that
-// there is no way of determining whether a key genuinely has the value nil, or
-// whether it doesn't exist in the cache using only this function
-func (cache *Cache) GetAll(keys []string) map[string]interface{} {
+// GetByKeys retrieves multiple entries using the keys passed as parameter
+// All keys are returned in the map, regardless of whether they exist or not, however, entries that do not exist in the
+// cache will return nil, meaning that there is no way of determining whether a key genuinely has the value nil, or
+// whether it doesn't exist in the cache using only this function.
+func (cache *Cache) GetByKeys(keys []string) map[string]interface{} {
 	entries := make(map[string]interface{})
 	for _, key := range keys {
 		entries[key], _ = cache.Get(key)
@@ -270,14 +279,44 @@ func (cache *Cache) GetAll(keys []string) map[string]interface{} {
 	return entries
 }
 
+// GetAll retrieves all cache entries
+//
+// If the eviction policy is LeastRecentlyUsed, note that unlike Get and GetByKeys, this does not update the last access
+// timestamp. The reason for this is that since all cache entries will be accessed, updating the last access timestamp
+// would provide very little benefit while harming the ability to accurately determine the next key that will be evicted
+//
+// You should probably avoid using this if you have a lot of entries.
+//
+// GetKeysByPattern is a good alternative if you want to retrieve entries that you do not have the key for, as it only
+// retrieves the keys and does not trigger active eviction and has a parameter for setting a limit to the number of keys
+// you wish to retrieve.
+func (cache *Cache) GetAll() map[string]interface{} {
+	entries := make(map[string]interface{})
+	cache.mutex.Lock()
+	for key, entry := range cache.entries {
+		if entry.Expired() {
+			cache.delete(key)
+			continue
+		}
+		entries[key] = entry.Value
+	}
+	cache.stats.Hits += uint64(len(entries))
+	cache.mutex.Unlock()
+	return entries
+}
+
 // GetKeysByPattern retrieves a slice of keys that match a given pattern
 // If the limit is set to 0, the entire cache will be searched for matching keys.
 // If the limit is above 0, the search will stop once the specified number of matching keys have been found.
 //
-// e.g. cache.GetKeysByPattern("*some*", 0) will return all keys containing "some" in them
-// e.g. cache.GetKeysByPattern("*some*", 5) will return 5 keys (or less) containing "some" in them
+// e.g.
+//     cache.GetKeysByPattern("*some*", 0) will return all keys containing "some" in them
+//     cache.GetKeysByPattern("*some*", 5) will return 5 keys (or less) containing "some" in them
 //
-// Note that GetKeysByPattern does not trigger evictions, nor does it count as accessing the entry.
+// Note that GetKeysByPattern does not trigger active evictions, nor does it count as accessing the entry, the latter
+// only applying if the cache uses the LeastRecentlyUsed eviction policy.
+// The reason for that behavior is that these two (active eviction and access) only applies when you access the value
+// of the cache entry, and this function only returns the keys.
 func (cache *Cache) GetKeysByPattern(pattern string, limit int) []string {
 	var matchingKeys []string
 	cache.mutex.RLock()
