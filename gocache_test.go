@@ -147,7 +147,7 @@ func TestCache_GetKeysByPattern(t *testing.T) {
 	testGetKeysByPattern(t, []string{"key1", "key2", "key3", "key4"}, "*", 2, 2)
 	// Some keys match
 	testGetKeysByPattern(t, []string{"key1", "key2", "key3", "key4", "key11"}, "key1*", 0, 2)
-	testGetKeysByPattern(t, []string{"key1", "key2", "key3", "key4", "key11"}, "key1*", 0, 2)
+	testGetKeysByPattern(t, []string{"key1", "key2", "key3", "key4", "key11"}, "*key1*", 0, 2)
 	testGetKeysByPattern(t, []string{"key1", "key2", "key3", "key4", "key11", "key111"}, "key1*", 0, 3)
 	testGetKeysByPattern(t, []string{"key1", "key2", "key3", "key4", "key11", "key111"}, "key11*", 0, 2)
 	testGetKeysByPattern(t, []string{"key1", "key2", "key3", "key4", "key11", "key111"}, "*11*", 0, 2)
