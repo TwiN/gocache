@@ -1,6 +1,7 @@
 package gocache
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -65,7 +66,9 @@ func TestEntry_SizeInBytes(t *testing.T) {
 }
 
 func testSizeInBytes(t *testing.T, key string, value interface{}, expectedSize int) {
-	if size := (&Entry{Key: key, Value: value}).SizeInBytes(); size != expectedSize {
-		t.Errorf("expected size of entry with key '%v' and value '%v' (%T) to be %d, got %d", key, value, value, expectedSize, size)
-	}
+	t.Run(fmt.Sprintf("%T_%d", value, expectedSize), func(t *testing.T) {
+		if size := (&Entry{Key: key, Value: value}).SizeInBytes(); size != expectedSize {
+			t.Errorf("expected size of entry with key '%v' and value '%v' (%T) to be %d, got %d", key, value, value, expectedSize, size)
+		}
+	})
 }
