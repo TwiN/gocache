@@ -101,7 +101,18 @@ func TestJanitorIsLoopingProperly(t *testing.T) {
 	if cache.Count() != JanitorMaxIterationsPerShift+3 {
 		t.Error("The janitor shouldn't have had enough time to remove anything from the cache yet", cache.Count())
 	}
-	time.Sleep(JanitorMinShiftBackOff * 8)
+	const timeout = JanitorMinShiftBackOff * 20
+	threeKeysExpiredWithinOneSecond := false
+	for start := time.Now(); time.Since(start) < timeout; {
+		if cache.Stats().ExpiredKeys == 3 {
+			threeKeysExpiredWithinOneSecond = true
+			break
+		}
+		time.Sleep(JanitorMinShiftBackOff)
+	}
+	if !threeKeysExpiredWithinOneSecond {
+		t.Error("expected 3 keys to expire within 1 second")
+	}
 	if cache.Count() != JanitorMaxIterationsPerShift {
 		t.Error("The janitor should've deleted 3 entries")
 	}
