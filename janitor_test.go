@@ -34,6 +34,20 @@ func TestCache_StartJanitorWhenAlreadyStarted(t *testing.T) {
 	cache.StopJanitor()
 }
 
+func TestCache_StopJanitor(t *testing.T) {
+	cache := NewCache()
+	_ = cache.StartJanitor()
+	if cache.stopJanitor == nil {
+		t.Error("starting the janitor should've initialized cache.stopJanitor")
+	}
+	cache.StopJanitor()
+	if cache.stopJanitor != nil {
+		t.Error("stopping the janitor should've set cache.stopJanitor to nil")
+	}
+	// Check if stopping the janitor even though it's already stopped causes a panic
+	cache.StopJanitor()
+}
+
 func TestJanitor(t *testing.T) {
 	Debug = true
 	cache := NewCache().WithMaxSize(3 * JanitorMaxIterationsPerShift)
