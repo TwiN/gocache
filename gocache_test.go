@@ -169,6 +169,20 @@ func testGetKeysByPattern(t *testing.T, keys []string, pattern string, limit, ex
 	}
 }
 
+func TestCache_GetKeysByPatternWithExpiredKey(t *testing.T) {
+	cache := NewCache().WithMaxSize(10)
+	cache.SetWithTTL("key", "value", 10*time.Millisecond)
+	// The cache entry shouldn't have expired yet, so GetKeysByPattern should return 1 key
+	if matchingKeys := cache.GetKeysByPattern("*", 0); len(matchingKeys) != 1 {
+		t.Errorf("expected to have %d keys to match pattern '%s', got %d", 1, "*", len(matchingKeys))
+	}
+	time.Sleep(30 * time.Millisecond)
+	// Since the key expired, the same call should return 0 keys instead of 1
+	if matchingKeys := cache.GetKeysByPattern("*", 0); len(matchingKeys) != 0 {
+		t.Errorf("expected to have %d keys to match pattern '%s', got %d", 0, "*", len(matchingKeys))
+	}
+}
+
 func TestCache_Set(t *testing.T) {
 	cache := NewCache().WithMaxSize(NoMaxSize)
 	cache.Set("key", "value")
