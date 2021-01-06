@@ -417,12 +417,13 @@ func (server *Server) info(cmd redcon.Command, conn redcon.Conn) {
 		buffer.WriteString("\n")
 	}
 	if section == "ALL" || section == "STATS" {
+		stats := server.Cache.Stats()
 		buffer.WriteString("# Stats\n")
 		buffer.WriteString(fmt.Sprintf("current_keys:%d\n", server.Cache.Count()))
-		buffer.WriteString(fmt.Sprintf("evicted_keys:%d\n", server.Cache.Stats().EvictedKeys))
-		buffer.WriteString(fmt.Sprintf("expired_keys:%d\n", server.Cache.Stats().ExpiredKeys))
-		buffer.WriteString(fmt.Sprintf("keyspace_hits:%d\n", server.Cache.Stats().Hits))
-		buffer.WriteString(fmt.Sprintf("keyspace_misses:%d\n", server.Cache.Stats().Misses))
+		buffer.WriteString(fmt.Sprintf("evicted_keys:%d\n", stats.EvictedKeys))
+		buffer.WriteString(fmt.Sprintf("expired_keys:%d\n", stats.ExpiredKeys))
+		buffer.WriteString(fmt.Sprintf("keyspace_hits:%d\n", stats.Hits))
+		buffer.WriteString(fmt.Sprintf("keyspace_misses:%d\n", stats.Misses))
 		buffer.WriteString("\n")
 	}
 	if section == "ALL" || section == "MEMORY" {
