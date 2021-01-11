@@ -154,11 +154,11 @@ func (cache *Cache) WithEvictionPolicy(policy EvictionPolicy) *Cache {
 //
 // In Go, an interface is only nil if both its type and value are nil, which means that a nil pointer
 // (e.g. (*Struct)(nil)) will retain its attribution to the type, and the unmodified value returned from
-// Cache.Get, for instance, will return false when compared with nil.
+// Cache.Get, for instance, would return false when compared with nil if this option is set to false.
 //
 // We can bypass this by detecting if the interface's value is nil and setting it to nil rather than
 // a nil pointer, which will make the value returned from Cache.Get return true when compared with nil.
-// This is exactly what passing true to WithForceNilInterfaceOnNilPointer does, and it's also the default value.
+// This is exactly what passing true to WithForceNilInterfaceOnNilPointer does, and it's also the default behavior.
 //
 // Alternatively, you may pass false to WithForceNilInterfaceOnNilPointer, which will mean that you'll have
 // to cast the value returned from Cache.Get to its original type to check for whether the pointer returned
