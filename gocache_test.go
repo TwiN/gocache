@@ -973,6 +973,35 @@ func TestCache_MemoryUsageIsReliable(t *testing.T) {
 	}
 }
 
+func TestCache_WithForceNilInterfaceOnNilPointer(t *testing.T) {
+	type Struct struct{}
+	cache := NewCache().WithForceNilInterfaceOnNilPointer(true)
+	cache.Set("key", (*Struct)(nil))
+	if value, exists := cache.Get("key"); !exists {
+		t.Error("expected key to exist")
+	} else {
+		if value != nil {
+			// the value is not nil, because cache.Get returns an interface{}, and the type of that interface is not nil
+			t.Error("value should be nil")
+		}
+	}
+
+	cache.Clear()
+
+	cache = cache.WithForceNilInterfaceOnNilPointer(false)
+	cache.Set("key", (*Struct)(nil))
+	if value, exists := cache.Get("key"); !exists {
+		t.Error("expected key to exist")
+	} else {
+		if value == nil {
+			t.Error("value should be not be nil, because the type of the interface is not nil")
+		}
+		if value.(*Struct) != nil {
+			t.Error("casted value should be nil")
+		}
+	}
+}
+
 func TestEvictionWhenThereIsNothingToEvict(t *testing.T) {
 	cache := NewCache()
 	cache.evict()
