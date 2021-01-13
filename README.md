@@ -437,6 +437,7 @@ BenchmarkCache_WithForceNilInterfaceOnNilPointer/true_with_nil_struct_pointer-8 
 BenchmarkCache_WithForceNilInterfaceOnNilPointer/true-8                          6090482   191 ns/op
 BenchmarkCache_WithForceNilInterfaceOnNilPointer/false_with_nil_struct_pointer-8 6184629   187 ns/op
 BenchmarkCache_WithForceNilInterfaceOnNilPointer/false-8                         6281781   186 ns/op
+(Trimmed "BenchmarkCache_" for readability)
 WithForceNilInterfaceOnNilPointerWithConcurrency
 WithForceNilInterfaceOnNilPointerWithConcurrency/true_with_nil_struct_pointer-8  4379564   268 ns/op
 WithForceNilInterfaceOnNilPointerWithConcurrency/true-8                          4379558   265 ns/op
