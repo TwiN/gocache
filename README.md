@@ -384,64 +384,64 @@ but if you're looking into using a library like gocache, odds are, you want more
 ```
 // Normal map
 BenchmarkMap_Get
-BenchmarkMap_Get-8                                                                    46087372     26.7 ns/op
-BenchmarkMap_Set                                                                         
-BenchmarkMap_Set/small_value-8                                                         3841911      389 ns/op
-BenchmarkMap_Set/medium_value-8                                                        3887074      391 ns/op
-BenchmarkMap_Set/large_value-8                                                         3921956      393 ns/op
-// Gocache                                                                               
-BenchmarkCache_Get                                                                       
-BenchmarkCache_Get/FirstInFirstOut-8                                                  27273036     46.4 ns/op
-BenchmarkCache_Get/LeastRecentlyUsed-8                                                26648248     46.3 ns/op
-BenchmarkCache_Set                                                                    
-BenchmarkCache_Set/FirstInFirstOut_small_value-8                                       2919584      405 ns/op
-BenchmarkCache_Set/FirstInFirstOut_medium_value-8                                      2990841      391 ns/op
-BenchmarkCache_Set/FirstInFirstOut_large_value-8                                       2970513      391 ns/op
-BenchmarkCache_Set/LeastRecentlyUsed_small_value-8                                     2962939      402 ns/op
-BenchmarkCache_Set/LeastRecentlyUsed_medium_value-8                                    2962963      390 ns/op
-BenchmarkCache_Set/LeastRecentlyUsed_large_value-8                                     2962928      394 ns/op
-BenchmarkCache_SetUsingMaxMemoryUsage                                                 
-BenchmarkCache_SetUsingMaxMemoryUsage/small_value-8                                    2683356      447 ns/op
-BenchmarkCache_SetUsingMaxMemoryUsage/medium_value-8                                   2637578      441 ns/op
-BenchmarkCache_SetUsingMaxMemoryUsage/large_value-8                                    2672434      443 ns/op
-BenchmarkCache_SetWithMaxSize                                                         
-BenchmarkCache_SetWithMaxSize/100_small_value-8                                        4782966      252 ns/op
-BenchmarkCache_SetWithMaxSize/10000_small_value-8                                      4067967      296 ns/op
-BenchmarkCache_SetWithMaxSize/100000_small_value-8                                     3762055      328 ns/op
-BenchmarkCache_SetWithMaxSize/100_medium_value-8                                       4760479      252 ns/op
-BenchmarkCache_SetWithMaxSize/10000_medium_value-8                                     4081050      295 ns/op
-BenchmarkCache_SetWithMaxSize/100000_medium_value-8                                    3785050      330 ns/op
-BenchmarkCache_SetWithMaxSize/100_large_value-8                                        4732909      254 ns/op
-BenchmarkCache_SetWithMaxSize/10000_large_value-8                                      4079533      297 ns/op
-BenchmarkCache_SetWithMaxSize/100000_large_value-8                                     3712820      331 ns/op
-BenchmarkCache_SetWithMaxSizeAndLRU                                                   
-BenchmarkCache_SetWithMaxSizeAndLRU/100_small_value-8                                  4761732      254 ns/op
-BenchmarkCache_SetWithMaxSizeAndLRU/10000_small_value-8                                4084474      296 ns/op
-BenchmarkCache_SetWithMaxSizeAndLRU/100000_small_value-8                               3761402      329 ns/op
-BenchmarkCache_SetWithMaxSizeAndLRU/100_medium_value-8                                 4783075      254 ns/op
-BenchmarkCache_SetWithMaxSizeAndLRU/10000_medium_value-8                               4103980      296 ns/op
-BenchmarkCache_SetWithMaxSizeAndLRU/100000_medium_value-8                              3646023      331 ns/op
-BenchmarkCache_SetWithMaxSizeAndLRU/100_large_value-8                                  4779025      254 ns/op
-BenchmarkCache_SetWithMaxSizeAndLRU/10000_large_value-8                                4096192      296 ns/op
-BenchmarkCache_SetWithMaxSizeAndLRU/100000_large_value-8                               3726823      331 ns/op
-BenchmarkCache_GetSetMultipleConcurrent                                               
-BenchmarkCache_GetSetMultipleConcurrent-8                                               707142     1698 ns/op
+BenchmarkMap_Get-8                                                                46087372   26.7 ns/op
+BenchmarkMap_Set                                                                     
+BenchmarkMap_Set/small_value-8                                                     3841911    389 ns/op
+BenchmarkMap_Set/medium_value-8                                                    3887074    391 ns/op
+BenchmarkMap_Set/large_value-8                                                     3921956    393 ns/op
+// Gocache                                                                           
+BenchmarkCache_Get                                                                   
+BenchmarkCache_Get/FirstInFirstOut-8                                              27273036   46.4 ns/op
+BenchmarkCache_Get/LeastRecentlyUsed-8                                            26648248   46.3 ns/op
+BenchmarkCache_Set                                                                
+BenchmarkCache_Set/FirstInFirstOut_small_value-8                                   2919584    405 ns/op
+BenchmarkCache_Set/FirstInFirstOut_medium_value-8                                  2990841    391 ns/op
+BenchmarkCache_Set/FirstInFirstOut_large_value-8                                   2970513    391 ns/op
+BenchmarkCache_Set/LeastRecentlyUsed_small_value-8                                 2962939    402 ns/op
+BenchmarkCache_Set/LeastRecentlyUsed_medium_value-8                                2962963    390 ns/op
+BenchmarkCache_Set/LeastRecentlyUsed_large_value-8                                 2962928    394 ns/op
+BenchmarkCache_SetUsingMaxMemoryUsage                                             
+BenchmarkCache_SetUsingMaxMemoryUsage/small_value-8                                2683356    447 ns/op
+BenchmarkCache_SetUsingMaxMemoryUsage/medium_value-8                               2637578    441 ns/op
+BenchmarkCache_SetUsingMaxMemoryUsage/large_value-8                                2672434    443 ns/op
+BenchmarkCache_SetWithMaxSize                                                     
+BenchmarkCache_SetWithMaxSize/100_small_value-8                                    4782966    252 ns/op
+BenchmarkCache_SetWithMaxSize/10000_small_value-8                                  4067967    296 ns/op
+BenchmarkCache_SetWithMaxSize/100000_small_value-8                                 3762055    328 ns/op
+BenchmarkCache_SetWithMaxSize/100_medium_value-8                                   4760479    252 ns/op
+BenchmarkCache_SetWithMaxSize/10000_medium_value-8                                 4081050    295 ns/op
+BenchmarkCache_SetWithMaxSize/100000_medium_value-8                                3785050    330 ns/op
+BenchmarkCache_SetWithMaxSize/100_large_value-8                                    4732909    254 ns/op
+BenchmarkCache_SetWithMaxSize/10000_large_value-8                                  4079533    297 ns/op
+BenchmarkCache_SetWithMaxSize/100000_large_value-8                                 3712820    331 ns/op
+BenchmarkCache_SetWithMaxSizeAndLRU                                               
+BenchmarkCache_SetWithMaxSizeAndLRU/100_small_value-8                              4761732    254 ns/op
+BenchmarkCache_SetWithMaxSizeAndLRU/10000_small_value-8                            4084474    296 ns/op
+BenchmarkCache_SetWithMaxSizeAndLRU/100000_small_value-8                           3761402    329 ns/op
+BenchmarkCache_SetWithMaxSizeAndLRU/100_medium_value-8                             4783075    254 ns/op
+BenchmarkCache_SetWithMaxSizeAndLRU/10000_medium_value-8                           4103980    296 ns/op
+BenchmarkCache_SetWithMaxSizeAndLRU/100000_medium_value-8                          3646023    331 ns/op
+BenchmarkCache_SetWithMaxSizeAndLRU/100_large_value-8                              4779025    254 ns/op
+BenchmarkCache_SetWithMaxSizeAndLRU/10000_large_value-8                            4096192    296 ns/op
+BenchmarkCache_SetWithMaxSizeAndLRU/100000_large_value-8                           3726823    331 ns/op
+BenchmarkCache_GetSetMultipleConcurrent                                           
+BenchmarkCache_GetSetMultipleConcurrent-8                                           707142   1698 ns/op
 BenchmarkCache_GetSetConcurrentWithFrequentEviction
-BenchmarkCache_GetSetConcurrentWithFrequentEviction/FirstInFirstOut-8                  3616256      334 ns/op
-BenchmarkCache_GetSetConcurrentWithFrequentEviction/LeastRecentlyUsed-8                3636367      331 ns/op
-BenchmarkCache_GetConcurrentWithLRU                                                    
-BenchmarkCache_GetConcurrentWithLRU/FirstInFirstOut-8                                  4405557      268 ns/op
-BenchmarkCache_GetConcurrentWithLRU/LeastRecentlyUsed-8                                4445475      269 ns/op
+BenchmarkCache_GetSetConcurrentWithFrequentEviction/FirstInFirstOut-8              3616256    334 ns/op
+BenchmarkCache_GetSetConcurrentWithFrequentEviction/LeastRecentlyUsed-8            3636367    331 ns/op
+BenchmarkCache_GetConcurrentWithLRU                                                
+BenchmarkCache_GetConcurrentWithLRU/FirstInFirstOut-8                              4405557    268 ns/op
+BenchmarkCache_GetConcurrentWithLRU/LeastRecentlyUsed-8                            4445475    269 ns/op
 BenchmarkCache_WithForceNilInterfaceOnNilPointer
-BenchmarkCache_WithForceNilInterfaceOnNilPointer/true_with_nil_struct_pointer-8        6184591      191 ns/op
-BenchmarkCache_WithForceNilInterfaceOnNilPointer/true-8                                6090482      191 ns/op
-BenchmarkCache_WithForceNilInterfaceOnNilPointer/false_with_nil_struct_pointer-8       6184629      187 ns/op
-BenchmarkCache_WithForceNilInterfaceOnNilPointer/false-8                               6281781      186 ns/op
-BenchmarkCache_WithForceNilInterfaceOnNilPointerWithConcurrency
-BenchmarkCache_WithForceNilInterfaceOnNilPointerWithConcurrency/true_with_nil_struct_pointer-8    4379564      268 ns/op
-BenchmarkCache_WithForceNilInterfaceOnNilPointerWithConcurrency/true-8                            4379558      265 ns/op
-BenchmarkCache_WithForceNilInterfaceOnNilPointerWithConcurrency/false_with_nil_struct_pointer-8   4444456      261 ns/op
-BenchmarkCache_WithForceNilInterfaceOnNilPointerWithConcurrency/false-8                           4493896      262 ns/op
+BenchmarkCache_WithForceNilInterfaceOnNilPointer/true_with_nil_struct_pointer-8    6184591    191 ns/op
+BenchmarkCache_WithForceNilInterfaceOnNilPointer/true-8                            6090482    191 ns/op
+BenchmarkCache_WithForceNilInterfaceOnNilPointer/false_with_nil_struct_pointer-8   6184629    187 ns/op
+BenchmarkCache_WithForceNilInterfaceOnNilPointer/false-8                           6281781    186 ns/op
+WithForceNilInterfaceOnNilPointerWithConcurrency
+WithForceNilInterfaceOnNilPointerWithConcurrency/true_with_nil_struct_pointer-8    4379564    268 ns/op
+WithForceNilInterfaceOnNilPointerWithConcurrency/true-8                            4379558    265 ns/op
+WithForceNilInterfaceOnNilPointerWithConcurrency/false_with_nil_struct_pointer-8   4444456    261 ns/op
+WithForceNilInterfaceOnNilPointerWithConcurrency/false-8                           4493896    262 ns/op
 ```
 
 
