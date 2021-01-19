@@ -4,7 +4,6 @@ package gocacheserver
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -557,9 +556,8 @@ func TestUnknownCommand(t *testing.T) {
 }
 
 func TestServer_WithAutoSave(t *testing.T) {
-	defer os.Remove("TestServer_WithAutoSave.bak")
-	defer os.Remove("TestServer_WithAutoSave.bak.lock")
-	serverWithAutoSave := NewServer(gocache.NewCache().WithEvictionPolicy(gocache.LeastRecentlyUsed).WithMaxSize(10)).WithPort(16163).WithAutoSave(10*time.Millisecond, "TestServer_WithAutoSave.bak")
+	file := t.TempDir() + "/" + "TestServer_WithAutoSave.bak"
+	serverWithAutoSave := NewServer(gocache.NewCache().WithEvictionPolicy(gocache.LeastRecentlyUsed).WithMaxSize(10)).WithPort(16163).WithAutoSave(10*time.Millisecond, file)
 	go serverWithAutoSave.Start()
 	serverWithAutoSave.Cache.Set("john", "doe")
 	serverWithAutoSave.Cache.Set("jane", "doe")
@@ -575,7 +573,7 @@ func TestServer_WithAutoSave(t *testing.T) {
 	}
 	// We'll start another server with the save configuration as the first server.
 	// This should trigger the data from the first server to be retrieved from the AutoSaveFile into the new server.
-	otherServerWithAutoSave := NewServer(gocache.NewCache().WithEvictionPolicy(gocache.LeastRecentlyUsed).WithMaxSize(10)).WithPort(16163).WithAutoSave(10*time.Minute, "TestServer_WithAutoSave.bak")
+	otherServerWithAutoSave := NewServer(gocache.NewCache().WithEvictionPolicy(gocache.LeastRecentlyUsed).WithMaxSize(10)).WithPort(16163).WithAutoSave(10*time.Minute, file)
 	go otherServerWithAutoSave.Start()
 	// Wait for long enough to the cache to be re-populated
 	for {

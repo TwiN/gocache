@@ -5,26 +5,25 @@ package gocache
 import (
 	"encoding/gob"
 	"fmt"
-	"os"
 	"strconv"
 	"testing"
 	"time"
 )
 
 func TestCache_SaveToFile(t *testing.T) {
-	defer os.Remove(TestCacheFile)
+	file := t.TempDir() + "/" + TestCacheFile
 	cache := NewCache()
 	for n := 0; n < 10; n++ {
 		cache.Set(strconv.Itoa(n), fmt.Sprintf("v%d", n))
 		// To make sure that two entries don't get the exact same timestamp, as that might mess up the order
 		time.Sleep(time.Nanosecond)
 	}
-	err := cache.SaveToFile(TestCacheFile)
+	err := cache.SaveToFile(file)
 	if err != nil {
 		t.Fatal("shouldn't have returned an error, but got:", err.Error())
 	}
 	newCache := NewCache()
-	numberOfEntriesEvicted, err := newCache.ReadFromFile(TestCacheFile)
+	numberOfEntriesEvicted, err := newCache.ReadFromFile(file)
 	if err != nil {
 		t.Fatal("shouldn't have returned an error, but got:", err.Error())
 	}
@@ -55,7 +54,7 @@ func TestCache_SaveToFile(t *testing.T) {
 }
 
 func TestCache_SaveToFileStruct(t *testing.T) {
-	defer os.Remove(TestCacheFile)
+	file := t.TempDir() + "/" + TestCacheFile
 	cache := NewCache()
 	type SpecialString string
 	type NestedStruct struct {
@@ -70,12 +69,12 @@ func TestCache_SaveToFileStruct(t *testing.T) {
 	// register the custom struct with gob
 	gob.Register(CustomStruct{})
 	cache.Set("key", CustomStruct{A: "test", B: 123, C: &NestedStruct{D: "what"}, E: "special"})
-	err := cache.SaveToFile(TestCacheFile)
+	err := cache.SaveToFile(file)
 	if err != nil {
 		t.Fatal("shouldn't have returned an error, but got:", err.Error())
 	}
 	newCache := NewCache()
-	numberOfEntriesEvicted, err := newCache.ReadFromFile(TestCacheFile)
+	numberOfEntriesEvicted, err := newCache.ReadFromFile(file)
 	if err != nil {
 		t.Fatal("shouldn't have returned an error, but got:", err.Error())
 	}
@@ -98,18 +97,18 @@ func TestCache_SaveToFileStruct(t *testing.T) {
 }
 
 func TestCache_ReadFromFile(t *testing.T) {
-	defer os.Remove(TestCacheFile)
+	file := t.TempDir() + "/" + TestCacheFile
 	cache := NewCache()
 	for n := 0; n < 100; n++ {
 		cache.Set(strconv.Itoa(n), fmt.Sprintf("v%d", n))
 	}
-	err := cache.SaveToFile(TestCacheFile)
+	err := cache.SaveToFile(file)
 	if err != nil {
 		panic(err)
 	}
 	cache.Clear()
 	cache = NewCache().WithMaxSize(97)
-	numberOfEntriesEvicted, err := cache.ReadFromFile(TestCacheFile)
+	numberOfEntriesEvicted, err := cache.ReadFromFile(file)
 	if err != nil {
 		panic(err)
 	}
@@ -138,18 +137,18 @@ func TestCache_ReadFromFile(t *testing.T) {
 
 func TestCache_ReadFromFileWithMaxMemoryUsageAndMaxSizeEvictions(t *testing.T) {
 	Debug = true
-	defer os.Remove(TestCacheFile)
+	file := t.TempDir() + "/" + TestCacheFile
 	cache := NewCache()
 	for n := 0; n < 100; n++ {
 		cache.Set(strconv.Itoa(n), fmt.Sprintf("v%d", n))
 	}
-	err := cache.SaveToFile(TestCacheFile)
+	err := cache.SaveToFile(file)
 	if err != nil {
 		panic(err)
 	}
 	cache.Clear()
 	cache = NewCache().WithMaxMemoryUsage(5 * Kilobyte)
-	numberOfEntriesEvicted, err := cache.ReadFromFile(TestCacheFile)
+	numberOfEntriesEvicted, err := cache.ReadFromFile(file)
 	if err != nil {
 		panic(err)
 	}
@@ -185,18 +184,18 @@ func TestCache_ReadFromFileWithMaxMemoryUsageAndMaxSizeEvictions(t *testing.T) {
 
 // Since there's no MaxSize nor MaxMemoryUsage, there should be no evictions
 func TestCache_ReadFromFileWithNoMaxSizeOrMaxMemoryUsage(t *testing.T) {
-	defer os.Remove(TestCacheFile)
+	file := t.TempDir() + "/" + TestCacheFile
 	cache := NewCache()
 	for n := 0; n < 100; n++ {
 		cache.Set(strconv.Itoa(n), fmt.Sprintf("v%d", n))
 	}
-	err := cache.SaveToFile(TestCacheFile)
+	err := cache.SaveToFile(file)
 	if err != nil {
 		panic(err)
 	}
 	cache.Clear()
 	cache = NewCache().WithMaxSize(NoMaxSize).WithMaxMemoryUsage(NoMaxMemoryUsage)
-	numberOfEntriesEvicted, err := cache.ReadFromFile(TestCacheFile)
+	numberOfEntriesEvicted, err := cache.ReadFromFile(file)
 	if err != nil {
 		panic(err)
 	}
@@ -216,17 +215,17 @@ func TestCache_ReadFromFileWithNoMaxSizeOrMaxMemoryUsage(t *testing.T) {
 
 // go test -cpuprofile cpu.prof -memprofile mem.prof -bench ^\QTestCache_ReadFromFileWithBigFile\E$
 //func TestCache_ReadFromFileWithBigFile(t *testing.T) {
-//	defer os.Remove(TestCacheFile)
+//	file := t.TempDir() + "/" + TestCacheFile
 //	cache := NewCache().WithMaxSize(100000)
 //
 //	for n := 0; n < 100000; n++ {
 //		cache.Set(strconv.Itoa(n), "value")
 //	}
-//	err := cache.SaveToFile(TestCacheFile)
+//	err := cache.SaveToFile(file)
 //	if err != nil {
 //		panic(err)
 //	}
 //	cache.Clear()
 //	cache = cache.WithMaxSize(100000)
-//	_, _ = cache.ReadFromFile(TestCacheFile)
+//	_, _ = cache.ReadFromFile(file)
 //}
