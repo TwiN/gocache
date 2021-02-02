@@ -84,6 +84,15 @@ func TestCache_GetEntryThatHasNotExpiredYet(t *testing.T) {
 	}
 }
 
+func TestCache_GetValue(t *testing.T) {
+	cache := NewCache().WithMaxSize(10)
+	cache.Set("key", "value")
+	value := cache.GetValue("key")
+	if value != "value" {
+		t.Errorf("expected: %s, but got: %s", "value", value)
+	}
+}
+
 func TestCache_GetByKeys(t *testing.T) {
 	cache := NewCache().WithMaxSize(10)
 	cache.Set("key1", "value1")

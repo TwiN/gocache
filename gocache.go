@@ -335,6 +335,13 @@ func (cache *Cache) Get(key string) (interface{}, bool) {
 	return entry.Value, true
 }
 
+// GetValue retrieves an entry using the key passed as parameter
+// Unlike Get, this function only returns the value
+func (cache *Cache) GetValue(key string) interface{} {
+	value, _ := cache.Get(key)
+	return value
+}
+
 // GetByKeys retrieves multiple entries using the keys passed as parameter
 // All keys are returned in the map, regardless of whether they exist or not, however, entries that do not exist in the
 // cache will return nil, meaning that there is no way of determining whether a key genuinely has the value nil, or
