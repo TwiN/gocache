@@ -33,6 +33,7 @@ with support for LRU and FIFO eviction policies as well as expiration, bulk oper
   - [Summary](#summary)
   - [Results](#results)
 - [FAQ](#faq)
+  - [How can I persist the data on application termination?](#how-can-i-persist-the-data-on-application-termination)
   - [Why does the memory usage not go down?](#why-does-the-memory-usage-not-go-down)
 
 
@@ -125,52 +126,52 @@ You can also delete multiple entries by using `cache.DeleteAll([]string{"key1", 
 package main
 
 import (
-	"fmt"
-	"time"
+    "fmt"
+    "time"
 
     "github.com/TwinProduction/gocache"
 )
 
 func main() {
-	cache := gocache.NewCache().WithEvictionPolicy(gocache.LeastRecentlyUsed).WithMaxSize(10000)
-	cache.StartJanitor() // Passively manages expired entries
+    cache := gocache.NewCache().WithEvictionPolicy(gocache.LeastRecentlyUsed).WithMaxSize(10000)
+    cache.StartJanitor() // Passively manages expired entries
 
-	cache.Set("key", "value")
-	cache.SetWithTTL("key-with-ttl", "value", 60*time.Minute)
-	cache.SetAll(map[string]interface{}{"k1": "v1", "k2": "v2", "k3": "v3"})
+    cache.Set("key", "value")
+    cache.SetWithTTL("key-with-ttl", "value", 60*time.Minute)
+    cache.SetAll(map[string]interface{}{"k1": "v1", "k2": "v2", "k3": "v3"})
 
-	value, exists := cache.Get("key")
-	fmt.Printf("[Get] key=key; value=%s; exists=%v\n", value, exists)
-	for key, value := range cache.GetByKeys([]string{"k1", "k2", "k3"}) {
-		fmt.Printf("[GetByKeys] key=%s; value=%s\n", key, value)
-	}
-	for _, key := range cache.GetKeysByPattern("key*", 0) {
-		fmt.Printf("[GetKeysByPattern] key=%s\n", key)
-	}
+    value, exists := cache.Get("key")
+    fmt.Printf("[Get] key=key; value=%s; exists=%v\n", value, exists)
+    for key, value := range cache.GetByKeys([]string{"k1", "k2", "k3"}) {
+        fmt.Printf("[GetByKeys] key=%s; value=%s\n", key, value)
+    }
+    for _, key := range cache.GetKeysByPattern("key*", 0) {
+        fmt.Printf("[GetKeysByPattern] key=%s\n", key)
+    }
 
-	fmt.Println("Cache size before persisting cache to file:", cache.Count())
-	err := cache.SaveToFile("cache.bak")
-	if err != nil {
-		panic(fmt.Sprintf("failed to persist cache to file: %s", err.Error()))
-	}
+    fmt.Println("Cache size before persisting cache to file:", cache.Count())
+    err := cache.SaveToFile("cache.bak")
+    if err != nil {
+        panic(fmt.Sprintf("failed to persist cache to file: %s", err.Error()))
+    }
 
-	cache.Expire("key", time.Hour)
-	time.Sleep(500*time.Millisecond)
-	timeUntilExpiration, _ := cache.TTL("key")
-	fmt.Println("Number of minutes before 'key' expires:", int(timeUntilExpiration.Seconds()))
+    cache.Expire("key", time.Hour)
+    time.Sleep(500*time.Millisecond)
+    timeUntilExpiration, _ := cache.TTL("key")
+    fmt.Println("Number of minutes before 'key' expires:", int(timeUntilExpiration.Seconds()))
 
-	cache.Delete("key")
-	cache.DeleteAll([]string{"k1", "k2", "k3"})
+    cache.Delete("key")
+    cache.DeleteAll([]string{"k1", "k2", "k3"})
 
-	fmt.Println("Cache size before restoring cache from file:", cache.Count())
-	_, err = cache.ReadFromFile("cache.bak")
-	if err != nil {
-		panic(fmt.Sprintf("failed to restore cache from file: %s", err.Error()))
-	}
+    fmt.Println("Cache size before restoring cache from file:", cache.Count())
+    _, err = cache.ReadFromFile("cache.bak")
+    if err != nil {
+        panic(fmt.Sprintf("failed to restore cache from file: %s", err.Error()))
+    }
 
-	fmt.Println("Cache size after restoring cache from file:", cache.Count())
-	cache.Clear()
-	fmt.Println("Cache size after clearing the cache:", cache.Count())
+    fmt.Println("Cache size after restoring cache from file:", cache.Count())
+    cache.Clear()
+    fmt.Println("Cache size after clearing the cache:", cache.Count())
 }
 ```
 
@@ -215,8 +216,8 @@ While you can cache structs in memory out of the box, persisting structs to a fi
 
 ```go
 type YourCustomStruct struct {
-	A string
-	B int
+    A string
+    B int
 }
 
 // ...
@@ -317,14 +318,14 @@ as long as they don't import the `gocacheserver` package.
 package main
 
 import (
-	"github.com/TwinProduction/gocache"
-	"github.com/TwinProduction/gocache/gocacheserver"
+    "github.com/TwinProduction/gocache"
+    "github.com/TwinProduction/gocache/gocacheserver"
 )
 
 func main() {
-	cache := gocache.NewCache().WithEvictionPolicy(gocache.LeastRecentlyUsed).WithMaxSize(100000)
-	server := gocacheserver.NewServer(cache).WithPort(6379)
-	server.Start()
+    cache := gocache.NewCache().WithEvictionPolicy(gocache.LeastRecentlyUsed).WithMaxSize(100000)
+    server := gocacheserver.NewServer(cache).WithPort(6379)
+    server.Start()
 }
 ```
 
@@ -447,6 +448,64 @@ WithForceNilInterfaceOnNilPointerWithConcurrency/false-8                        
 
 
 ## FAQ
+
+### How can I persist the data on application termination?
+
+Because this library doesn't persist immediately after every write operations, persistence is instead expected to be
+done on a schedule, like for instance, every 10 minutes.
+
+While this prevents you from losing all of your data, you may still lose some data if the application stopped 9 minutes
+after the previous "auto save".
+
+To increase your odds of not losing any data, you can use Go's `signal` package, more specifically its `Notify` function
+which allows listening for termination signals like SIGTERM and SIGINT. Once a termination signal is caught, you can
+add the necessary logic for a graceful shutdown.
+
+In the following example, the code that would usually be present in the `main` function is moved to a different function
+named `Start` which is launched on a different goroutine so that listening for a termination signals is what blocks the
+main goroutine instead:
+
+```go
+package main
+
+import (
+    "log"
+    "os"
+    "os/signal"
+    "syscall"
+
+    "github.com/TwinProduction/gocache"
+)
+
+const CacheFile = "gocache.data"
+
+var cache = gocache.NewCache()
+
+func main() {
+    // Load persisted data from file
+    cache.ReadFromFile(CacheFile)
+    // Start everything else on another goroutine to prevent blocking the main goroutine
+    go Start()
+    // Wait for termination signal
+    sig := make(chan os.Signal, 1)
+    done := make(chan bool, 1)
+    signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
+    go func() {
+        <-sig
+        log.Println("Received termination signal, attempting to gracefully shut down")
+        err := cache.SaveToFile(CacheFile)
+        if err != nil {
+            log.Println("Failed to save storage provider:", err.Error())
+        }
+        done <- true
+    }()
+    <-done
+    log.Println("Shutting down")
+}
+```
+
+Note that this won't protect you from a SIGKILL, as this signal cannot be caught.
+
 
 ### Why does the memory usage not go down?
 
