@@ -34,6 +34,7 @@ with support for LRU and FIFO eviction policies as well as expiration, bulk oper
   - [Results](#results)
 - [FAQ](#faq)
   - [How can I persist the data on application termination?](#how-can-i-persist-the-data-on-application-termination)
+  - [How can I automatically save the cache to a file every 5 minutes?](#how-can-i-automatically-save-the-cache-to-a-file-every-5-minutes)
   - [Why does the memory usage not go down?](#why-does-the-memory-usage-not-go-down)
 
 
@@ -507,9 +508,38 @@ func main() {
 Note that this won't protect you from a SIGKILL, as this signal cannot be caught.
 
 
+### How can I automatically save the cache to a file every 5 minutes?
+
+Beside using the suggestion above, automatically persisting the cache on an interval will protect your application from
+sudden terminations triggered by signals that cannot be caught, such as the force kill signal received by an application
+being OOMKilled.
+
+The simplest implementation could be something like this:
+```go
+const CacheFile = "gocache.data"
+
+func main() {
+    cache := gocache.NewCache()
+    cache.ReadFromFile(CacheFile)
+    go autoSave(10*time.Minute)
+    // ...
+}
+
+func autoSave(interval time.Duration) {
+    for {
+        err := cache.SaveToFile(CacheFile)
+        if err != nil {
+            log.Println("Failed to persist cache to file:", err.Error())
+        }
+        time.Sleep(interval)
+    }
+}
+```
+
+
 ### Why does the memory usage not go down?
 
-> **NOTE**: As of Go 1.16, this will no longer apply. See [golang/go#42330](https://github.com/golang/go/issues/42330)
+> **NOTE**: As of Go 1.16, this no longer applies. See [golang/go#42330](https://github.com/golang/go/issues/42330)
 
 By default, Go uses `MADV_FREE` if the kernel supports it to release memory, which is significantly more efficient 
 than using `MADV_DONTNEED`. Unfortunately, this means that RSS doesn't go down unless the OS actually needs the 
