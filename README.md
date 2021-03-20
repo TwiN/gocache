@@ -253,6 +253,13 @@ every key that cannot be parsed are not populated into the cache by `ReadFromFil
 In other words, if you're falling back to a database or something similar when the cache doesn't have the key requested,
 you'll be fine.
 
+Note that if you need to modify the type of a variable in a struct, you should change the name of that variable as well.
+For instance, if the struct has a `CreatedAt` variable with the type `time.Time` and that variable type is later
+modified to `uint64`, decoding the struct would fail, however, if you rename the variable to `CreatedAtUnixTimeInMs`,
+there won't be any decoding issues other than the loss of data for that field. You could also obviously handle the 
+migration gracefully by keeping both variables, populating the `CreatedAtUnixTimeInMs` variable with the `CreatedAt`
+value and then removing the `CreatedAt` field.
+
 
 ## Eviction
 
