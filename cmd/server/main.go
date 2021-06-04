@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/TwinProduction/gocache"
-	"github.com/TwinProduction/gocache/gocacheserver"
+	gocacheserver "github.com/TwinProduction/gocache/server"
 )
 
 func main() {

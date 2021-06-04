@@ -1,4 +1,4 @@
-package gocacheserver
+package server
 
 import (
 	"bytes"

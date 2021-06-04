@@ -60,6 +60,9 @@ It may also serve as a good reference to use in order to implement gocache in yo
 go get -u github.com/TwinProduction/gocache
 ```
 
+If you're interested in using gocache as a server rather than an embedded library, see [Server](#server)
+
+
 ### Initializing the cache
 ```go
 cache := gocache.NewCache().WithMaxSize(1000).WithEvictionPolicy(gocache.LeastRecentlyUsed)
@@ -312,29 +315,35 @@ If you do not start the janitor, there will be no passive deletion of expired ke
 
 
 ## Server
-For the sake of convenience, a ready-to-go cache server is available 
-through the `gocacheserver` package. 
+For the sake of convenience, a ready-to-go cache server is available through the `server` package.
 
-The reason why the server is in a different package is because `gocache` limit its external dependencies to the strict 
-minimum (e.g. boltdb for persistence), however, rather than re-inventing the wheel, the server implementation uses
-redcon, which is a very good Redis server framework for Go.
-
-That way, those who desire to use gocache without the server will not add any extra dependencies
-as long as they don't import the `gocacheserver` package. 
-
+#### As an application
 ```go
 package main
 
 import (
     "github.com/TwinProduction/gocache"
-    "github.com/TwinProduction/gocache/gocacheserver"
+    gocacheserver "github.com/TwinProduction/gocache/server"
 )
 
 func main() {
     cache := gocache.NewCache().WithEvictionPolicy(gocache.LeastRecentlyUsed).WithMaxSize(100000)
     server := gocacheserver.NewServer(cache).WithPort(6379)
+    // This is a blocking function, therefore, you are expected to run this on a goroutine
     server.Start()
 }
+```
+
+The reason why the server is in a different package is because `gocache` limit its external dependencies to the strict
+minimum (e.g. boltdb for persistence), however, rather than re-inventing the wheel, the server implementation uses
+redcon, which is a very good Redis server framework for Go.
+
+That way, those who desire to use gocache without the server will not add any extra dependencies
+as long as they don't import the `server` package.
+
+If you'd like to run it through the CLI:
+```
+go run cmd/server/main.go
 ```
 
 Any Redis client should be able to interact with the server, though only the following instructions are supported:
@@ -359,13 +368,11 @@ Any Redis client should be able to interact with the server, though only the fol
 ## Running the server with Docker
 [![Docker pulls](https://img.shields.io/docker/pulls/twinproduction/gocache-server.svg)](https://cloud.docker.com/repository/docker/twinproduction/gocache-server)
 
-To build it locally, refer to the Makefile's `docker-build` and `docker-run` steps.
-
-Note that the server version of gocache is still under development.
-
 ```
 docker run --name gocache-server -p 6379:6379 twinproduction/gocache-server
 ```
+
+To build it locally, refer to the Makefile's `docker-build` and `docker-run` steps.
 
 
 ## Performance
@@ -559,7 +566,7 @@ notice the memory usage lowering.
 [reference](https://github.com/golang/go/issues/33376#issuecomment-666455792)
 
 You can reproduce this by following the steps below:
-- Start gocacheserver
+- Start the server
 - Note the memory usage
 - Create 500k keys
 - Note the memory usage

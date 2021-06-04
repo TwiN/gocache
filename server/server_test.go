@@ -1,6 +1,6 @@
 // +build !race
 
-package gocacheserver
+package server
 
 import (
 	"fmt"
