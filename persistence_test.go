@@ -43,11 +43,11 @@ func TestCache_SaveToFile(t *testing.T) {
 	if cache.tail.Key != newCache.tail.Key {
 		t.Errorf("tail key should've been %s, but was %s", cache.tail.Key, newCache.tail.Key)
 	}
-	if cache.head.previous.Key != newCache.head.previous.Key {
-		t.Errorf("head's previous key should've been %s, but was %s", cache.head.previous.Key, newCache.head.previous.Key)
+	if cache.head.next.Key != newCache.head.next.Key {
+		t.Errorf("head's next key should've been %s, but was %s", cache.head.next.Key, newCache.head.next.Key)
 	}
-	if cache.tail.next.Key != newCache.tail.next.Key {
-		t.Errorf("tail's next key should've been %s, but was %s", cache.tail.next.Key, newCache.tail.next.Key)
+	if cache.tail.previous.Key != newCache.tail.previous.Key {
+		t.Errorf("tail's previous key should've been %s, but was %s", cache.tail.previous.Key, newCache.tail.previous.Key)
 	}
 }
 

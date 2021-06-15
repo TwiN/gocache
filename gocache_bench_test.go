@@ -168,7 +168,7 @@ func BenchmarkCache_GetSetConcurrentWithFrequentEviction(b *testing.B) {
 	}
 }
 
-func BenchmarkCache_GetConcurrentWithLRU(b *testing.B) {
+func BenchmarkCache_GetConcurrently(b *testing.B) {
 	value := strings.Repeat("a", 256)
 	for _, evictionPolicy := range []EvictionPolicy{FirstInFirstOut, LeastRecentlyUsed} {
 		b.Run(string(evictionPolicy), func(b *testing.B) {
