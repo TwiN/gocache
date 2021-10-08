@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/TwinProduction/gocache"
+	"github.com/TwiN/gocache"
 	"github.com/tidwall/redcon"
 )
 

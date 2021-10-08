@@ -7,13 +7,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/TwinProduction/gocache"
-	gocacheserver "github.com/TwinProduction/gocache/server"
+	"github.com/TwiN/gocache"
+	gocacheserver "github.com/TwiN/gocache/server"
 )
 
 func main() {
 	fmt.Println("=============================================")
-	fmt.Println("= https://github.com/TwinProduction/gocache =")
+	fmt.Println("= https://github.com/TwiN/gocache =")
 	fmt.Println("=============================================")
 	port, _ := strconv.Atoi(os.Getenv("PORT"))
 	if port == 0 {

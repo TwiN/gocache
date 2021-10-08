@@ -1,4 +1,4 @@
-module github.com/TwinProduction/gocache
+module github.com/TwiN/gocache
 
 go 1.16
 

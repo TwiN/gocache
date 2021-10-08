@@ -1,3 +1,4 @@
+//go:build !race
 // +build !race
 
 package server
@@ -8,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/TwinProduction/gocache"
+	"github.com/TwiN/gocache"
 	"github.com/go-redis/redis"
 )
 
