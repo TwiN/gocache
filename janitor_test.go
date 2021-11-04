@@ -115,3 +115,17 @@ func TestJanitorIsLoopingProperly(t *testing.T) {
 		t.Error("The janitor should've deleted 3 entries")
 	}
 }
+
+func TestJanitorDoesNotThrowATantrumWhenThereIsNothingToClean(t *testing.T) {
+	cache := NewCache()
+	start := time.Now()
+	_ = cache.StartJanitor()
+	defer cache.StopJanitor()
+	time.Sleep(JanitorMaxShiftBackOff * 3)
+	// Technically, if the janitor doesn't backoff properly, the sleep above is likely to take more time than the sleep
+	// below because it would be eating up the CPU.
+	// This is a far-fetched test, but it's a good sanity check.
+	if time.Since(start) > JanitorMaxShiftBackOff*4 {
+		t.Error("The janitor should've backed off and prevented CPU usage from throttling the application")
+	}
+}

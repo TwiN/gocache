@@ -8,10 +8,6 @@ import (
 	"time"
 )
 
-const (
-	TestCacheFile = "test.cache"
-)
-
 func TestNewCache(t *testing.T) {
 	cache := NewCache().WithMaxSize(1234).WithEvictionPolicy(LeastRecentlyUsed)
 	if cache.MaxMemoryUsage() != NoMaxMemoryUsage {

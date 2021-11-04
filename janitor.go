@@ -11,15 +11,20 @@ const (
 	JanitorShiftTarget = 25
 
 	// JanitorMaxIterationsPerShift is the maximum number of nodes to traverse before pausing
+	//
+	// This is to prevent the janitor from traversing the entire cache, which could take a long time
+	// to complete depending on the size of the cache.
+	//
+	// By limiting it to a small number, we are effectively reducing the impact of passive eviction.
 	JanitorMaxIterationsPerShift = 1000
 
 	// JanitorMinShiftBackOff is the minimum interval between each iteration of steps
 	// defined by JanitorMaxIterationsPerShift
-	JanitorMinShiftBackOff = time.Millisecond * 50
+	JanitorMinShiftBackOff = 50 * time.Millisecond
 
 	// JanitorMaxShiftBackOff is the maximum interval between each iteration of steps
 	// defined by JanitorMaxIterationsPerShift
-	JanitorMaxShiftBackOff = time.Millisecond * 500
+	JanitorMaxShiftBackOff = 500 * time.Millisecond
 )
 
 // StartJanitor starts the janitor on a different goroutine

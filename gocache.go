@@ -164,7 +164,7 @@ func (cache *Cache) WithEvictionPolicy(policy EvictionPolicy) *Cache {
 // to cast the value returned from Cache.Get to its original type to check for whether the pointer returned
 // is nil or not.
 //
-// If set to true:
+// If set to true (default):
 //     cache := gocache.NewCache().WithForceNilInterfaceOnNilPointer(true)
 //     cache.Set("key", (*Struct)(nil))
 //     value, _ := cache.Get("key")
