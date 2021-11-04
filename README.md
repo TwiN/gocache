@@ -1,9 +1,9 @@
 # gocache
-![build](https://github.com/TwiN/gocache/v2/workflows/build/badge.svg?branch=master) 
-[![Go Report Card](https://goreportcard.com/badge/github.com/TwiN/gocache/v2)](https://goreportcard.com/report/github.com/TwiN/gocache/v2)
+![build](https://github.com/TwiN/gocache/workflows/build/badge.svg?branch=master) 
+[![Go Report Card](https://goreportcard.com/badge/github.com/TwiN/gocache)](https://goreportcard.com/report/github.com/TwiN/gocache)
 [![codecov](https://codecov.io/gh/TwiN/gocache/branch/master/graph/badge.svg)](https://codecov.io/gh/TwiN/gocache)
-[![Go version](https://img.shields.io/github/go-mod/go-version/TwiN/gocache.svg)](https://github.com/TwiN/gocache/v2)
-[![Go Reference](https://pkg.go.dev/badge/github.com/TwiN/gocache/v2.svg)](https://pkg.go.dev/github.com/TwiN/gocache/v2)
+[![Go version](https://img.shields.io/github/go-mod/go-version/TwiN/gocache.svg)](https://github.com/TwiN/gocache)
+[![Go Reference](https://pkg.go.dev/badge/github.com/TwiN/gocache.svg)](https://pkg.go.dev/github.com/TwiN/gocache)
 [![Follow TwiN](https://img.shields.io/github/followers/TwiN?label=Follow&style=social)](https://github.com/TwiN)
 
 gocache is an easy-to-use, high-performance, lightweight and thread-safe (goroutine-safe) in-memory key-value cache 
@@ -87,7 +87,7 @@ cache.StartJanitor()
 | TTL                               | Gets the time until a cache key expires. 
 | Expire                            | Sets the expiration time of an existing cache key.
 
-For further documentation, please refer to [Go Reference](https://pkg.go.dev/github.com/TwiN/gocache/v2)
+For further documentation, please refer to [Go Reference](https://pkg.go.dev/github.com/TwiN/gocache)
 
 
 ### Examples
