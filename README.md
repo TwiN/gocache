@@ -345,8 +345,8 @@ import (
 var cache = gocache.NewCache()
 
 func main() {
-	data := retrieveCacheEntriesUsingWhateverMeanYouUsedToPersistIt()
-	cache.SetAll(data)
+    data := retrieveCacheEntriesUsingWhateverMeanYouUsedToPersistIt()
+    cache.SetAll(data)
     // Start everything else on another goroutine to prevent blocking the main goroutine
     go Start()
     // Wait for termination signal
