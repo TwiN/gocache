@@ -65,27 +65,27 @@ cache.StartJanitor()
 ```
 
 ### Functions
-| Function                          | Description |
-| --------------------------------- | ----------- |
-| WithMaxSize                       | Sets the max size of the cache. `gocache.NoMaxSize` means there is no limit. If not set, the default max size is `gocache.DefaultMaxSize`.
-| WithMaxMemoryUsage                | Sets the max memory usage of the cache. `gocache.NoMaxMemoryUsage` means there is no limit. The default behavior is to not evict based on memory usage.
-| WithEvictionPolicy                | Sets the eviction algorithm to be used when the cache reaches the max size. If not set, the default eviction policy is `gocache.FirstInFirstOut` (FIFO).
-| WithForceNilInterfaceOnNilPointer | Configures whether values with a nil pointer passed to write functions should be forcefully set to nil. Defaults to true.
-| StartJanitor                      | Starts the janitor, which is in charge of deleting expired cache entries in the background.
-| StopJanitor                       | Stops the janitor.
-| Set                               | Same as `SetWithTTL`, but with no expiration (`gocache.NoExpiration`)
-| SetAll                            | Same as `Set`, but in bulk
-| SetWithTTL                        | Creates or updates a cache entry with the given key, value and expiration time. If the max size after the aforementioned operation is above the configured max size, the tail will be evicted. Depending on the eviction policy, the tail is defined as the oldest 
-| Get                               | Gets a cache entry by its key.
-| GetByKeys                         | Gets a map of entries by their keys. The resulting map will contain all keys, even if some of the keys in the slice passed as parameter were not present in the cache.  
-| GetAll                            | Gets all cache entries.
-| GetKeysByPattern                  | Retrieves a slice of keys that matches a given pattern.
-| Delete                            | Removes a key from the cache.
-| DeleteAll                         | Removes multiple keys from the cache.
-| Count                             | Gets the size of the cache. This includes cache keys which may have already expired, but have not been removed yet.
-| Clear                             | Wipes the cache.
-| TTL                               | Gets the time until a cache key expires. 
-| Expire                            | Sets the expiration time of an existing cache key.
+| Function                          | Description                                                                                                                                                                                                                                                        |
+|-----------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| WithMaxSize                       | Sets the max size of the cache. `gocache.NoMaxSize` means there is no limit. If not set, the default max size is `gocache.DefaultMaxSize`.                                                                                                                         |
+| WithMaxMemoryUsage                | Sets the max memory usage of the cache. `gocache.NoMaxMemoryUsage` means there is no limit. The default behavior is to not evict based on memory usage.                                                                                                            |
+| WithEvictionPolicy                | Sets the eviction algorithm to be used when the cache reaches the max size. If not set, the default eviction policy is `gocache.FirstInFirstOut` (FIFO).                                                                                                           |
+| WithForceNilInterfaceOnNilPointer | Configures whether values with a nil pointer passed to write functions should be forcefully set to nil. Defaults to true.                                                                                                                                          |
+| StartJanitor                      | Starts the janitor, which is in charge of deleting expired cache entries in the background.                                                                                                                                                                        |
+| StopJanitor                       | Stops the janitor.                                                                                                                                                                                                                                                 |
+| Set                               | Same as `SetWithTTL`, but with no expiration (`gocache.NoExpiration`)                                                                                                                                                                                              |
+| SetAll                            | Same as `Set`, but in bulk                                                                                                                                                                                                                                         |
+| SetWithTTL                        | Creates or updates a cache entry with the given key, value and expiration time. If the max size after the aforementioned operation is above the configured max size, the tail will be evicted. Depending on the eviction policy, the tail is defined as the oldest |
+| Get                               | Gets a cache entry by its key.                                                                                                                                                                                                                                     |
+| GetByKeys                         | Gets a map of entries by their keys. The resulting map will contain all keys, even if some of the keys in the slice passed as parameter were not present in the cache.                                                                                             |
+| GetAll                            | Gets all cache entries.                                                                                                                                                                                                                                            |
+| GetKeysByPattern                  | Retrieves a slice of keys that matches a given pattern.                                                                                                                                                                                                            |
+| Delete                            | Removes a key from the cache.                                                                                                                                                                                                                                      |
+| DeleteAll                         | Removes multiple keys from the cache.                                                                                                                                                                                                                              |
+| Count                             | Gets the size of the cache. This includes cache keys which may have already expired, but have not been removed yet.                                                                                                                                                |
+| Clear                             | Wipes the cache.                                                                                                                                                                                                                                                   |
+| TTL                               | Gets the time until a cache key expires.                                                                                                                                                                                                                           |
+| Expire                            | Sets the expiration time of an existing cache key.                                                                                                                                                                                                                 |
 
 For further documentation, please refer to [Go Reference](https://pkg.go.dev/github.com/TwiN/gocache)
 
