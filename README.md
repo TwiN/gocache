@@ -132,7 +132,7 @@ func main() {
     cache.SetWithTTL("key-with-ttl", "value", 60*time.Minute)
     cache.SetAll(map[string]interface{}{"k1": "v1", "k2": "v2", "k3": "v3"})
 
-	fmt.Println("[Count] Cache size:", cache.Count())
+    fmt.Println("[Count] Cache size:", cache.Count())
 
     value, exists := cache.Get("key")
     fmt.Printf("[Get] key=key; value=%s; exists=%v\n", value, exists)
