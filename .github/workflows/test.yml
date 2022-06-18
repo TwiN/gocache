@@ -10,7 +10,7 @@ on:
       - '*.md'
 jobs:
   test:
-    name: Test
+    name: test
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
