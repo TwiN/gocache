@@ -1,5 +1,5 @@
 # gocache
-![build](https://github.com/TwiN/gocache/workflows/test/badge.svg?branch=master) 
+![test](https://github.com/TwiN/gocache/workflows/test/badge.svg?branch=master) 
 [![Go Report Card](https://goreportcard.com/badge/github.com/TwiN/gocache)](https://goreportcard.com/report/github.com/TwiN/gocache)
 [![codecov](https://codecov.io/gh/TwiN/gocache/branch/master/graph/badge.svg)](https://codecov.io/gh/TwiN/gocache)
 [![Go version](https://img.shields.io/github/go-mod/go-version/TwiN/gocache.svg)](https://github.com/TwiN/gocache)
