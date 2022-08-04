@@ -777,6 +777,23 @@ func TestCache_DeleteAll(t *testing.T) {
 	}
 }
 
+func TestCache_DeleteKeysByPattern(t *testing.T) {
+	cache := NewCache()
+	cache.Set("a1", []byte("v"))
+	cache.Set("a2", []byte("v"))
+	cache.Set("b1", []byte("v"))
+	if len(cache.GetByKeys([]string{"a1", "a2", "b1"})) != 3 {
+		t.Error("Expected keys 1, 2 and 3 to exist")
+	}
+	numberOfDeletedKeys := cache.DeleteKeysByPattern("a*")
+	if numberOfDeletedKeys != 2 {
+		t.Errorf("Expected 2 keys to have been deleted, but only %d were deleted", numberOfDeletedKeys)
+	}
+	if _, exists := cache.Get("b1"); !exists {
+		t.Error("Expected key b1 to still exist")
+	}
+}
+
 func TestCache_TTL(t *testing.T) {
 	cache := NewCache()
 	ttl, err := cache.TTL("key")
