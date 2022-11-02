@@ -9,7 +9,7 @@ import (
 )
 
 func BenchmarkMap_Get(b *testing.B) {
-	m := make(map[string]interface{})
+	m := make(map[string]any)
 	for n := 0; n < b.N; n++ {
 		_, _ = m[strconv.Itoa(n)]
 	}
@@ -24,7 +24,7 @@ func BenchmarkMap_Set(b *testing.B) {
 	}
 	for name, value := range values {
 		b.Run(fmt.Sprintf("%s value", name), func(b *testing.B) {
-			m := make(map[string]interface{})
+			m := make(map[string]any)
 			for n := 0; n < b.N; n++ {
 				m[strconv.Itoa(n)] = value
 			}

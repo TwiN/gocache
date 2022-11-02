@@ -62,10 +62,10 @@ func TestEntry_SizeInBytes(t *testing.T) {
 	testSizeInBytes(t, "k", struct{ A string }{A: "hello"}, 72)
 	testSizeInBytes(t, "k", struct{ A, B string }{A: "hello", B: "world"}, 78)
 	testSizeInBytes(t, "k", nil, 70)
-	testSizeInBytes(t, "k", make([]interface{}, 5), 170)
+	testSizeInBytes(t, "k", make([]any, 5), 170)
 }
 
-func testSizeInBytes(t *testing.T, key string, value interface{}, expectedSize int) {
+func testSizeInBytes(t *testing.T, key string, value any, expectedSize int) {
 	t.Run(fmt.Sprintf("%T_%d", value, expectedSize), func(t *testing.T) {
 		if size := (&Entry{Key: key, Value: value}).SizeInBytes(); size != expectedSize {
 			t.Errorf("expected size of entry with key '%v' and value '%v' (%T) to be %d, got %d", key, value, value, expectedSize, size)

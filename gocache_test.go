@@ -336,7 +336,7 @@ func TestCache_SetGetStruct(t *testing.T) {
 
 func TestCache_SetAll(t *testing.T) {
 	cache := NewCache().WithMaxSize(NoMaxSize)
-	cache.SetAll(map[string]interface{}{"k1": "v1", "k2": "v2"})
+	cache.SetAll(map[string]any{"k1": "v1", "k2": "v2"})
 	value, ok := cache.Get("k1")
 	if !ok {
 		t.Error("expected key to exist")
@@ -351,7 +351,7 @@ func TestCache_SetAll(t *testing.T) {
 	if value != "v2" {
 		t.Errorf("expected: %s, but got: %s", "v2", value)
 	}
-	cache.SetAll(map[string]interface{}{"k1": "updated"})
+	cache.SetAll(map[string]any{"k1": "updated"})
 	value, ok = cache.Get("k1")
 	if !ok {
 		t.Error("expected key to exist")
@@ -949,7 +949,7 @@ func TestCache_MemoryUsageIsReliable(t *testing.T) {
 		t.Error("cache.MemoryUsage() should've increased")
 	}
 	previousCacheMemoryUsage = cache.MemoryUsage()
-	cache.SetAll(map[string]interface{}{"2": "2", "3": "3", "4": "4"})
+	cache.SetAll(map[string]any{"2": "2", "3": "3", "4": "4"})
 	if cache.MemoryUsage() <= previousCacheMemoryUsage {
 		t.Error("cache.MemoryUsage() should've increased")
 	}
@@ -1003,7 +1003,7 @@ func TestCache_WithForceNilInterfaceOnNilPointer(t *testing.T) {
 		t.Error("expected key to exist")
 	} else {
 		if value != nil {
-			// the value is not nil, because cache.Get returns an interface{}, and the type of that interface is not nil
+			// the value is not nil, because cache.Get returns an interface{} (any), and the type of that interface is not nil
 			t.Error("value should be nil")
 		}
 	}
