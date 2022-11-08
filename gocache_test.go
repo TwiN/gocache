@@ -16,6 +16,9 @@ func TestNewCache(t *testing.T) {
 	if cache.EvictionPolicy() != LeastRecentlyUsed {
 		t.Error("should've had a LeastRecentlyUsed eviction policy")
 	}
+	if cache.defaultTTL != NoExpiration {
+		t.Error("should've had a default TTL of NoExpiration")
+	}
 	if cache.MaxSize() != 1234 {
 		t.Error("should've had a max cache size of 1234")
 	}
@@ -992,6 +995,28 @@ func TestCache_MemoryUsageIsReliable(t *testing.T) {
 	cache.Set("1", true)
 	if cache.MemoryUsage() >= previousCacheMemoryUsage {
 		t.Error("cache.MemoryUsage() should've decreased, because a bool uses less memory than a string")
+	}
+}
+
+func TestCache_WithDefaultTTL(t *testing.T) {
+	cache := NewCache().WithDefaultTTL(5 * time.Millisecond)
+	if cache.defaultTTL != 5*time.Millisecond {
+		t.Error("expected defaultTTL to be 5ms")
+	}
+	cache.Set("1", 1)
+	cache.SetWithTTL("2", 2, time.Hour)
+	if cache.GetValue("1") == nil {
+		t.Error("expected cache entry with key 1 to still exist")
+	}
+	if cache.GetValue("2") == nil {
+		t.Error("expected cache entry with key 2 to still exist")
+	}
+	time.Sleep(10 * time.Millisecond)
+	if cache.GetValue("1") != nil {
+		t.Error("expected cache entry with key 1 to have expired")
+	}
+	if cache.GetValue("2") == nil {
+		t.Error("expected cache entry with key 2 to still exist")
 	}
 }
 
