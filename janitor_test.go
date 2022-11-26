@@ -49,7 +49,6 @@ func TestCache_StopJanitor(t *testing.T) {
 }
 
 func TestJanitor(t *testing.T) {
-	Debug = true
 	cache := NewCache().WithMaxSize(3 * JanitorMaxIterationsPerShift)
 	defer cache.Clear()
 	for i := 0; i < 3*JanitorMaxIterationsPerShift; i++ {
@@ -79,7 +78,6 @@ func TestJanitor(t *testing.T) {
 	if cacheSize <= cache.Count() {
 		t.Error("The janitor should be deleting expired cache entries")
 	}
-	Debug = false
 }
 
 func TestJanitorIsLoopingProperly(t *testing.T) {

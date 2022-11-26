@@ -3,6 +3,8 @@ package gocache
 import (
 	"bytes"
 	"fmt"
+	"math/rand"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -995,6 +997,33 @@ func TestCache_MemoryUsageIsReliable(t *testing.T) {
 	cache.Set("1", true)
 	if cache.MemoryUsage() >= previousCacheMemoryUsage {
 		t.Error("cache.MemoryUsage() should've decreased, because a bool uses less memory than a string")
+	}
+}
+
+func TestCache_MemoryUsageAndMaxSizeIsReliable(t *testing.T) {
+	cache := NewCache().WithMaxMemoryUsage(100 * Kilobyte).WithMaxSize(1)
+	rand.Seed(time.Now().UnixNano())
+	for i := 0; i < 10000; i++ {
+		if i%5 == 0 {
+			cache.Set(strconv.Itoa(rand.Intn(10)), strings.Repeat("what", rand.Intn(10000)))
+		} else {
+			cache.Set(strconv.Itoa(rand.Intn(10)), struct {
+				m map[string]any
+				s string
+			}{
+				m: map[string]any{
+					"a": "b",
+					strings.Repeat("b", rand.Intn(1000)): map[string]string{
+						strings.Repeat("c", rand.Intn(1000)): "d",
+					},
+				},
+				s: strings.Repeat("e", rand.Intn(1000)),
+			})
+		}
+		cache.Get(strconv.Itoa(rand.Intn(10)))
+		if cache.MemoryUsage() < 0 {
+			t.Fatal("cache.MemoryUsage() should never be negative")
+		}
 	}
 }
 
