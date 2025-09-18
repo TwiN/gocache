@@ -85,11 +85,6 @@ type Cache struct {
 	// will still show as nil, which means that if you don't cast the interface after
 	// retrieving it, a nil check will return that the value is not false.
 	forceNilInterfaceOnNilPointer bool
-
-	// deepCopyEnabled determines whether values are deep copied to prevent mutation of cached data.
-	// When enabled (default), values are deep copied on Set and Get operations to ensure complete
-	// data isolation. When disabled, values are stored and returned by reference for maximum performance.
-	deepCopyEnabled bool
 }
 
 // MaxSize returns the maximum amount of keys that can be present in the cache before
@@ -217,17 +212,6 @@ func (cache *Cache) WithForceNilInterfaceOnNilPointer(forceNilInterfaceOnNilPoin
 	return cache
 }
 
-// WithDeepCopy sets whether values should be deep copied to prevent mutation of cached data.
-//
-// When enabled, prevents data corruption but reduces performance for complex types.
-// When disabled (default), provides maximum performance but cached slices/maps/structs may be mutated.
-//
-// Defaults to false
-func (cache *Cache) WithDeepCopy(enabled bool) *Cache {
-	cache.deepCopyEnabled = enabled
-	return cache
-}
-
 // NewCache creates a new Cache
 //
 // Should be used in conjunction with Cache.WithMaxSize, Cache.WithMaxMemoryUsage and/or Cache.WithEvictionPolicy
@@ -243,7 +227,6 @@ func NewCache() *Cache {
 		mutex:                         sync.RWMutex{},
 		stopJanitor:                   nil,
 		forceNilInterfaceOnNilPointer: true,
-		deepCopyEnabled:               false,
 	}
 }
 
@@ -279,11 +262,7 @@ func (cache *Cache) SetWithTTL(key string, value any, ttl time.Duration) {
 			RelevantTimestamp: time.Now(),
 			next:              cache.head,
 		}
-		if cache.deepCopyEnabled {
-			entry.Value = deepCopy(value)
-		} else {
-			entry.Value = value
-		}
+		entry.Value = value
 		if cache.head == nil {
 			cache.tail = entry
 		} else {
@@ -306,11 +285,7 @@ func (cache *Cache) SetWithTTL(key string, value any, ttl time.Duration) {
 			// Subtract the old entry from the cache's memoryUsage
 			cache.memoryUsage -= entry.SizeInBytes()
 		}
-		if cache.deepCopyEnabled {
-			entry.Value = deepCopy(value)
-		} else {
-			entry.Value = value
-		}
+		entry.Value = value
 		entry.RelevantTimestamp = time.Now()
 		if cache.maxMemoryUsage != NoMaxMemoryUsage {
 			// Add the memory usage of the new entry to the cache's memoryUsage
@@ -376,23 +351,11 @@ func (cache *Cache) Get(key string) (any, bool) {
 	if cache.evictionPolicy == LeastRecentlyUsed {
 		entry.Accessed()
 		if cache.head == entry {
-			// Still need to check deep copy even if already at head
-			if cache.deepCopyEnabled {
-				returnValue := deepCopy(entry.Value)
-				cache.mutex.Unlock()
-				return returnValue, true
-			}
 			cache.mutex.Unlock()
 			return entry.Value, true
 		}
 		// Because the eviction policy is LRU, we need to move the entry back to HEAD
 		cache.moveExistingEntryToHead(entry)
-	}
-	// Conditionally deep copy the value before returning
-	if cache.deepCopyEnabled {
-		returnValue := deepCopy(entry.Value)
-		cache.mutex.Unlock()
-		return returnValue, true
 	}
 	cache.mutex.Unlock()
 	return entry.Value, true
@@ -436,12 +399,7 @@ func (cache *Cache) GetAll() map[string]any {
 			cache.delete(key)
 			continue
 		}
-		// Conditionally deep copy the value to prevent mutations
-		if cache.deepCopyEnabled {
-			entries[key] = deepCopy(entry.Value)
-		} else {
-			entries[key] = entry.Value
-		}
+		entries[key] = entry.Value
 	}
 	cache.stats.Hits += uint64(len(entries))
 	cache.mutex.Unlock()
