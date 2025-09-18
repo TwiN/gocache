@@ -1120,3 +1120,282 @@ func TestCache(t *testing.T) {
 		t.Error("expected 5 to exist")
 	}
 }
+
+func TestCache_WithDeepCopy_Enabled(t *testing.T) {
+	type TestStructForConfig struct {
+		ID    int
+		Name  string
+		Items []string
+		Data  map[string]int
+	}
+
+	cache := NewCache().WithDeepCopy(true)
+
+	// Test that deep copy is enabled by default and with explicit enable
+	testStruct := TestStructForConfig{
+		ID:    1,
+		Name:  "test",
+		Items: []string{"a", "b", "c"},
+		Data:  map[string]int{"x": 1},
+	}
+
+	cache.Set("key", testStruct)
+
+	// Modify original after storing
+	testStruct.Items[0] = "MODIFIED"
+	testStruct.Data["y"] = 999
+
+	// Retrieve and verify it wasn't affected
+	cached, exists := cache.Get("key")
+	if !exists {
+		t.Fatal("Expected key to exist")
+	}
+
+	cachedStruct := cached.(TestStructForConfig)
+	if cachedStruct.Items[0] == "MODIFIED" {
+		t.Error("Deep copy failed: cached slice was modified by original")
+	}
+	if cachedStruct.Data["y"] == 999 {
+		t.Error("Deep copy failed: cached map was modified by original")
+	}
+
+	// Test that modifications to retrieved value don't affect cache
+	cachedStruct.Items[1] = "CHANGED"
+	cachedStruct.Data["z"] = 777
+
+	// Get again and verify cache wasn't affected
+	cached2, _ := cache.Get("key")
+	cachedStruct2 := cached2.(TestStructForConfig)
+	if cachedStruct2.Items[1] == "CHANGED" {
+		t.Error("Deep copy failed: cache was modified by retrieved value")
+	}
+	if cachedStruct2.Data["z"] == 777 {
+		t.Error("Deep copy failed: cache was modified by retrieved value")
+	}
+}
+
+func TestCache_WithDeepCopy_Disabled(t *testing.T) {
+	type TestStructForConfig struct {
+		ID    int
+		Name  string
+		Items []string
+		Data  map[string]int
+	}
+
+	cache := NewCache().WithDeepCopy(false)
+
+	testStruct := TestStructForConfig{
+		ID:    1,
+		Name:  "test",
+		Items: []string{"a", "b", "c"},
+		Data:  map[string]int{"x": 1},
+	}
+
+	cache.Set("key", testStruct)
+
+	// Modify original after storing - this should NOT affect cache since struct is copied by value
+	// But slices and maps inside are shared
+	testStruct.Items[0] = "MODIFIED"
+	testStruct.Data["y"] = 999
+
+	// Retrieve from cache
+	cached, exists := cache.Get("key")
+	if !exists {
+		t.Fatal("Expected key to exist")
+	}
+
+	cachedStruct := cached.(TestStructForConfig)
+	// The struct itself is copied by value, so modifications to slices/maps in the original
+	// should affect the cache when deep copy is disabled
+	if cachedStruct.Items[0] != "MODIFIED" {
+		t.Error("Expected slice to be shared when deep copy is disabled")
+	}
+	if cachedStruct.Data["y"] != 999 {
+		t.Error("Expected map to be shared when deep copy is disabled")
+	}
+}
+
+func TestCache_WithDeepCopy_ImmutableTypes(t *testing.T) {
+	// Test that immutable types work the same regardless of deep copy setting
+	testCases := []struct {
+		name     string
+		value    interface{}
+		deepCopy bool
+	}{
+		{"int_enabled", 42, true},
+		{"int_disabled", 42, false},
+		{"string_enabled", "hello", true},
+		{"string_disabled", "hello", false},
+		{"bool_enabled", true, true},
+		{"bool_disabled", true, false},
+		{"float_enabled", 3.14, true},
+		{"float_disabled", 3.14, false},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			cache := NewCache().WithDeepCopy(tc.deepCopy)
+			cache.Set("key", tc.value)
+
+			retrieved, exists := cache.Get("key")
+			if !exists {
+				t.Fatal("Expected key to exist")
+			}
+
+			if retrieved != tc.value {
+				t.Errorf("Expected %v, got %v", tc.value, retrieved)
+			}
+		})
+	}
+}
+
+func TestCache_WithDeepCopy_GetAll(t *testing.T) {
+	type TestStructForConfig struct {
+		ID    int
+		Name  string
+		Items []string
+		Data  map[string]int
+	}
+
+	cache := NewCache().WithDeepCopy(true)
+
+	testStruct := TestStructForConfig{
+		ID:    1,
+		Name:  "test",
+		Items: []string{"a", "b"},
+		Data:  map[string]int{"x": 1},
+	}
+
+	cache.Set("key1", testStruct)
+	cache.Set("key2", "simple string")
+
+	all := cache.GetAll()
+
+	// Modify retrieved struct
+	if struct1, ok := all["key1"].(TestStructForConfig); ok {
+		struct1.Items[0] = "MODIFIED"
+		struct1.Data["y"] = 999
+	}
+
+	// Get original again and verify it wasn't affected
+	original, _ := cache.Get("key1")
+	originalStruct := original.(TestStructForConfig)
+	if originalStruct.Items[0] == "MODIFIED" {
+		t.Error("GetAll should return deep copies when deep copy is enabled")
+	}
+	if originalStruct.Data["y"] == 999 {
+		t.Error("GetAll should return deep copies when deep copy is enabled")
+	}
+}
+
+func TestCache_WithDeepCopy_DefaultDisabled(t *testing.T) {
+	type TestStructForConfig struct {
+		Items []string
+	}
+
+	// Test that deep copy is disabled by default
+	cache := NewCache()
+
+	testStruct := TestStructForConfig{
+		Items: []string{"a", "b"},
+	}
+
+	cache.Set("key", testStruct)
+
+	// Modify original
+	testStruct.Items[0] = "MODIFIED"
+
+	// Verify cache was affected (deep copy should be disabled by default)
+	cached, _ := cache.Get("key")
+	cachedStruct := cached.(TestStructForConfig)
+	if cachedStruct.Items[0] != "MODIFIED" {
+		t.Error("Deep copy should be disabled by default")
+	}
+}
+
+func TestSliceMutationAfterSet(t *testing.T) {
+	type StructWithSlice struct {
+		Name  string
+		Items []string
+		Data  map[string]int
+	}
+
+	cache := NewCache().WithDeepCopy(true)
+
+	// Create a struct with a slice and map
+	original := StructWithSlice{
+		Name:  "test",
+		Items: []string{"a", "b", "c"},
+		Data:  map[string]int{"x": 1, "y": 2},
+	}
+
+	// Store it in cache
+	cache.Set("key", original)
+
+	// Modify the original slice and map after storing
+	original.Items[0] = "MODIFIED"
+	original.Items = append(original.Items, "ADDED")
+	original.Data["z"] = 999
+
+	// Retrieve from cache
+	cached, _ := cache.Get("key")
+	cachedStruct := cached.(StructWithSlice)
+
+	// Check if the cached version was affected
+	if cachedStruct.Items[0] == "MODIFIED" {
+		t.Error("Cached slice was modified! The cache stores a reference, not a copy!")
+		t.Errorf("Cached slice: %v", cachedStruct.Items)
+		t.Errorf("Original slice: %v", original.Items)
+	}
+
+	if cachedStruct.Data["z"] == 999 {
+		t.Error("Cached map was modified! The cache stores a reference, not a copy!")
+		t.Errorf("Cached map: %v", cachedStruct.Data)
+	}
+}
+
+func TestSliceMutationAfterGet(t *testing.T) {
+	type StructWithSlice struct {
+		Name  string
+		Items []string
+		Data  map[string]int
+	}
+
+	cache := NewCache().WithDeepCopy(true)
+
+	// Store a struct with a slice
+	cache.Set("key", StructWithSlice{
+		Name:  "test",
+		Items: []string{"a", "b", "c"},
+		Data:  map[string]int{"x": 1},
+	})
+
+	// Get it twice
+	cached1, _ := cache.Get("key")
+	struct1 := cached1.(StructWithSlice)
+
+	cached2, _ := cache.Get("key")
+	struct2 := cached2.(StructWithSlice)
+
+	// Modify through first reference
+	struct1.Items[0] = "MODIFIED"
+	struct1.Data["hacked"] = 666
+
+	// Check if second reference sees the change
+	if struct2.Items[0] == "MODIFIED" {
+		t.Error("Modification through one Get() affected another Get()! Slices are shared!")
+		t.Errorf("struct2.Items: %v", struct2.Items)
+	}
+
+	if struct2.Data["hacked"] == 666 {
+		t.Error("Modification through one Get() affected another Get()! Maps are shared!")
+		t.Errorf("struct2.Data: %v", struct2.Data)
+	}
+
+	// Check if the cache itself was modified
+	cached3, _ := cache.Get("key")
+	struct3 := cached3.(StructWithSlice)
+	if struct3.Items[0] == "MODIFIED" {
+		t.Error("The cached value itself was modified!")
+	}
+}
