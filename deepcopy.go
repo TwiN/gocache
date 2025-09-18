@@ -51,12 +51,29 @@ func deepCopyRecursive(dst, src reflect.Value) {
 			dst.Set(reflect.ValueOf(deepCopy(src.Interface())))
 		}
 	case reflect.Struct:
-		// Copy each field
+		// Check if this struct has any fields that can be copied individually
+		hasSettableFields := false
+		hasUnsettableFields := false
 		for i := 0; i < src.NumField(); i++ {
-			// Only copy exported fields
 			if dst.Field(i).CanSet() {
+				hasSettableFields = true
+			} else {
+				hasUnsettableFields = true
+			}
+		}
+		// If struct has only unexported/unsettable fields, use direct assignment
+		if hasUnsettableFields && !hasSettableFields {
+			dst.Set(src)
+		} else if hasSettableFields && !hasUnsettableFields {
+			// All fields can be copied individually - do deep copy
+			for i := 0; i < src.NumField(); i++ {
 				deepCopyRecursive(dst.Field(i), src.Field(i))
 			}
+		} else {
+			// Mixed case: has both settable and unsettable fields
+			// This is tricky - we can't do proper deep copying while preserving unexported fields
+			// For now, use direct assignment to preserve data integrity
+			dst.Set(src)
 		}
 	case reflect.Slice:
 		if !src.IsNil() {

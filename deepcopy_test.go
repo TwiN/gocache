@@ -3,6 +3,7 @@ package gocache
 import (
 	"reflect"
 	"testing"
+	"time"
 )
 
 // Test for Array types
@@ -323,5 +324,57 @@ func TestDeepCopy_EdgeCases(t *testing.T) {
 	*copiedPtrArray[0] = 999
 	if val1 == 999 {
 		t.Error("Array of pointers was not deep copied")
+	}
+}
+
+// Test for time.Time which has unexported fields
+func TestDeepCopy_Time(t *testing.T) {
+	// Test standalone time.Time
+	original := time.Now()
+	copied := deepCopy(original)
+	if !reflect.DeepEqual(original, copied) {
+		t.Error("time.Time should be deep copied correctly")
+	}
+	copiedTime := copied.(time.Time)
+	if !original.Equal(copiedTime) {
+		t.Errorf("Copied time should equal original: expected %v, got %v", original, copiedTime)
+	}
+	// Test time.Time in struct
+	type TimeStruct struct {
+		Timestamp time.Time
+		Name      string
+	}
+	now := time.Now()
+	originalStruct := TimeStruct{
+		Timestamp: now,
+		Name:      "test",
+	}
+	copiedStruct := deepCopy(originalStruct).(TimeStruct)
+	if !originalStruct.Timestamp.Equal(copiedStruct.Timestamp) {
+		t.Errorf("time.Time in struct should be copied correctly: expected %v, got %v",
+			originalStruct.Timestamp, copiedStruct.Timestamp)
+	}
+
+	if originalStruct.Name != copiedStruct.Name {
+		t.Errorf("String field should be copied: expected %s, got %s",
+			originalStruct.Name, copiedStruct.Name)
+	}
+	// Test time.Time in interface
+	var timeInterface interface{} = time.Now()
+	copiedInterface := deepCopy(timeInterface)
+	copiedTime2 := copiedInterface.(time.Time)
+	if !timeInterface.(time.Time).Equal(copiedTime2) {
+		t.Error("time.Time in interface should be copied correctly")
+	}
+	// Test pointer to time.Time
+	timePtr := &now
+	copiedTimePtr := deepCopy(timePtr).(*time.Time)
+	if !timePtr.Equal(*copiedTimePtr) {
+		t.Error("Pointer to time.Time should be deep copied correctly")
+	}
+	// Verify it's a deep copy - modifying copied shouldn't affect original
+	*copiedTimePtr = time.Time{}
+	if timePtr.IsZero() {
+		t.Error("Original time.Time was modified - not a deep copy")
 	}
 }
